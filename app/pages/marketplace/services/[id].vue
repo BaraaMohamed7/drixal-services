@@ -88,8 +88,8 @@ const submitRequest = async () => {
 </script>
 
 <template>
-  <section class="mx-auto max-w-5xl overflow-hidden px-4 py-5 sm:px-6">
-    <NuxtLink to="/marketplace" class="drixal-link-pill inline-flex rounded-full px-4 py-2 text-sm font-black">
+  <section class="mx-auto max-w-6xl overflow-hidden pb-8">
+    <NuxtLink to="/marketplace" class="drixal-link-pill inline-flex px-4 py-2 text-sm font-bold">
       {{ t("common.backToMarketplace") }}
     </NuxtLink>
 
@@ -97,42 +97,41 @@ const submitRequest = async () => {
     <p v-else-if="pending" class="drixal-panel mt-6 rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("serviceDetail.loading") }}</p>
 
     <div v-else-if="service" class="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <article class="drixal-panel min-w-0 overflow-hidden rounded-xl">
+      <article class="drixal-panel min-w-0 overflow-hidden">
         <div class="bg-[var(--drixal-navy)] p-5 text-[var(--ui-text-inverted)] md:p-6">
           <div class="mb-4 flex flex-wrap gap-2">
-            <span class="drixal-inverted-chip rounded-full px-3 py-1 text-xs font-black">{{ service.category.name }}</span>
-            <span class="drixal-inverted-chip rounded-full px-3 py-1 text-xs font-bold opacity-80">{{ service.locationType }}</span>
+            <span class="drixal-inverted-chip px-3 py-1 text-xs font-bold">{{ service.category.name }}</span>
+            <span class="drixal-inverted-chip px-3 py-1 text-xs font-semibold opacity-80">{{ service.locationType }}</span>
           </div>
           <h1 class="text-2xl font-semibold leading-8 tracking-tight">{{ service.name }}</h1>
           <p class="mt-3 max-w-2xl text-sm leading-5 text-[var(--ui-text-inverted)] opacity-75">{{ service.description }}</p>
         </div>
 
         <div class="grid gap-3 p-5 md:grid-cols-3 md:p-6">
-          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
-            <p class="drixal-muted text-xs font-bold uppercase tracking-widest">{{ t("serviceDetail.pricing") }}</p>
+          <div class="bg-[var(--drixal-soft)] p-4">
+            <p class="drixal-muted text-xs font-bold">{{ t("serviceDetail.pricing") }}</p>
             <p class="mt-2 text-xl font-black">{{ formatPrice }}</p>
           </div>
-          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
-            <p class="drixal-muted text-xs font-bold uppercase tracking-widest">{{ t("common.duration") }}</p>
+          <div class="bg-[var(--drixal-soft)] p-4">
+            <p class="drixal-muted text-xs font-bold">{{ t("common.duration") }}</p>
             <p class="mt-2 text-xl font-black">{{ service.duration ? `${service.duration} min` : t("serviceDetail.flexible") }}</p>
           </div>
-          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
-            <p class="drixal-muted text-xs font-bold uppercase tracking-widest">{{ t("serviceDetail.scheduling") }}</p>
+          <div class="bg-[var(--drixal-soft)] p-4">
+            <p class="drixal-muted text-xs font-bold">{{ t("serviceDetail.scheduling") }}</p>
             <p class="mt-2 text-xl font-black">{{ service.scheduling.required ? t("serviceDetail.required") : t("serviceDetail.optional") }}</p>
           </div>
         </div>
 
         <div class="border-t border-[var(--drixal-line)] p-5 md:p-6">
           <div class="mb-4">
-            <p class="drixal-muted text-xs font-black uppercase tracking-[0.2em]">{{ t("requestForm.eyebrow") }}</p>
-            <h2 class="mt-2 text-xl font-black">{{ t("requestForm.title") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("requestForm.title") }}</h2>
             <p class="drixal-muted mt-1 text-sm">{{ t("requestForm.description") }}</p>
           </div>
 
           <p v-if="requestSent" class="drixal-success mb-4 rounded-xl p-3 text-sm font-bold">{{ t("requestForm.success") }}</p>
           <p v-if="requestError" class="drixal-danger mb-4 rounded-xl p-3 text-sm font-bold">{{ requestError }}</p>
 
-           <div v-if="!auth.session.value.authenticated" class="rounded-xl border border-[var(--drixal-line)] bg-[var(--drixal-soft)] p-4">
+           <div v-if="!auth.session.value.authenticated" class="border border-[var(--drixal-line)] bg-[var(--drixal-soft)] p-4">
              <p class="font-bold">{{ t("requestForm.authRequired") }}</p>
              <p class="drixal-muted mt-1 text-sm">{{ t("requestForm.authRequiredDescription") }}</p>
              <UButton class="mt-4" :to="{ path: '/auth/login', query: { next: route.fullPath } }" :label="t('auth.signIn')" />
@@ -151,16 +150,16 @@ const submitRequest = async () => {
         </div>
       </article>
 
-      <aside class="drixal-panel h-fit min-w-0 rounded-xl p-5">
-        <p class="drixal-muted text-xs font-black uppercase tracking-[0.2em]">{{ t("serviceDetail.provider") }}</p>
-        <h2 class="mt-3 text-2xl font-black tracking-tight">{{ service.company.name }}</h2>
+      <aside class="drixal-panel h-fit min-w-0 p-5">
+        <p class="drixal-muted text-xs font-bold">{{ t("serviceDetail.provider") }}</p>
+        <h2 class="mt-3 text-2xl font-bold tracking-tight">{{ service.company.name }}</h2>
         <p class="drixal-muted mt-3 leading-7">{{ service.company.description || t("serviceDetail.providerFallback") }}</p>
 
         <div class="mt-6 grid gap-3 text-sm font-bold text-[var(--drixal-ink)]">
-          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
+          <div class="bg-[var(--drixal-soft)] p-4">
             {{ t("common.location") }}: {{ service.company.location.area }}{{ service.company.location.area && service.company.location.city ? ", " : "" }}{{ service.company.location.city }}
           </div>
-          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
+          <div class="bg-[var(--drixal-soft)] p-4">
             {{ t("common.rating") }}: {{ service.company.rating || 0 }}/5
           </div>
         </div>

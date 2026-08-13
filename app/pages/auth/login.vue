@@ -25,9 +25,8 @@ const login = async () => {
 </script>
 
 <template>
-  <div class="drixal-card rounded-xl p-6 sm:p-8">
-    <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--drixal-blue)]">{{ t("auth.welcomeBack") }}</p>
-    <h1 class="mt-3 text-2xl font-semibold tracking-tight">{{ t("auth.signInTitle") }}</h1>
+  <div class="drixal-card p-6 sm:p-8">
+    <h1 class="text-2xl font-semibold tracking-tight">{{ t("auth.signInTitle") }}</h1>
     <p class="drixal-muted mt-2 text-sm leading-6">{{ t("auth.signInDescription") }}</p>
 
     <form class="mt-7 grid gap-4" @submit.prevent="login">
@@ -37,7 +36,7 @@ const login = async () => {
       <UFormField :label="t('auth.password')" required>
         <UInput v-model="form.password" type="password" autocomplete="current-password" required class="w-full" :placeholder="t('auth.passwordPlaceholder')" />
       </UFormField>
-      <p v-if="error" class="drixal-danger rounded-lg p-3 text-sm font-semibold">{{ error }}</p>
+      <p v-if="error" class="drixal-danger p-3 text-sm font-semibold">{{ error }}</p>
       <UButton type="submit" block size="lg" :loading="pending" :label="t('auth.signIn')" />
     </form>
 

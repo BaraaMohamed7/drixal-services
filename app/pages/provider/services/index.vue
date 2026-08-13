@@ -80,33 +80,32 @@ const unpublish = async (service: ServiceItem) => {
 
 <template>
   <section class="grid gap-4 overflow-hidden pb-8">
-    <div class="carbon-card rounded-xl p-5">
+    <header class="page-header">
       <div class="grid gap-5 md:grid-cols-[1.4fr_0.6fr]">
         <div>
-          <p class="mb-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--drixal-blue)]">{{ t("providerServices.eyebrow") }}</p>
-          <h1 class="max-w-2xl text-2xl font-semibold leading-8 tracking-tight text-[var(--drixal-ink)]">{{ t("providerServices.title") }}</h1>
+          <h1 class="page-title max-w-2xl">{{ t("providerServices.title") }}</h1>
           <p class="mt-3 max-w-xl text-sm leading-6 text-[var(--drixal-muted)]">{{ t("providerServices.description") }}</p>
         </div>
 
-        <div class="rounded-lg border border-[var(--drixal-line)] p-4">
+        <div class="border border-[var(--drixal-line)] p-4">
           <p class="text-sm font-bold text-[var(--drixal-muted)]">{{ t("providerServices.currentSlice") }}</p>
           <div class="mt-4 grid grid-cols-3 gap-2 text-center">
-            <div class="rounded-lg border border-[var(--drixal-line)] p-3">
+            <div class="border border-[var(--drixal-line)] p-3">
               <p class="text-xl font-black">{{ services.length }}</p>
               <p class="drixal-muted text-xs font-bold">{{ t("common.services") }}</p>
             </div>
-            <div class="rounded-lg border border-[var(--drixal-line)] p-3">
+            <div class="border border-[var(--drixal-line)] p-3">
               <p class="text-xl font-black">{{ services.filter((service) => service.publicationStatus === "PUBLISHED").length }}</p>
               <p class="text-xs font-bold">{{ t("providerServices.published") }}</p>
             </div>
-            <div class="rounded-lg border border-[var(--drixal-line)] p-3">
+            <div class="border border-[var(--drixal-line)] p-3">
               <p class="text-xl font-black">{{ services.filter((service) => service.publicationStatus === "DRAFT").length }}</p>
               <p class="text-xs font-bold">{{ t("providerServices.drafts") }}</p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </header>
 
     <div class="carbon-card flex flex-col gap-3 rounded-xl p-3 md:flex-row md:items-center md:justify-between">
       <div class="flex flex-1 flex-col gap-3 md:flex-row">

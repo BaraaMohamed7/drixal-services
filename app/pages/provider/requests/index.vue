@@ -61,16 +61,15 @@ const runAction = async (request: ProviderRequest, action: "approve" | "reject" 
 
 <template>
   <section class="grid gap-4 overflow-hidden pb-8">
-    <div class="carbon-card rounded-xl p-5">
-      <p class="drixal-muted mb-2 text-xs font-black uppercase tracking-[0.2em]">{{ t("providerRequests.eyebrow") }}</p>
+    <header class="page-header">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 class="text-2xl font-semibold leading-8 tracking-tight">{{ t("providerRequests.title") }}</h1>
+          <h1 class="page-title">{{ t("providerRequests.title") }}</h1>
           <p class="drixal-muted mt-2 max-w-2xl">{{ t("providerRequests.description") }}</p>
         </div>
         <USelect v-model="status" :items="statusOptions" label-key="label" value-key="value" class="min-w-56" />
       </div>
-    </div>
+    </header>
 
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>
     <p v-else-if="pending" class="drixal-panel rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("providerRequests.loading") }}</p>

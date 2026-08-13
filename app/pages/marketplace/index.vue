@@ -96,16 +96,16 @@ const resetFilters = () => {
 </script>
 
 <template>
-  <section class="grid gap-5 overflow-hidden pb-8">
-    <div class="carbon-card rounded-xl p-5">
-      <div class="max-w-2xl">
-        <p class="mb-3 text-xs font-black uppercase tracking-[0.2em] text-[var(--drixal-blue)]">{{ t("marketplace.eyebrow") }}</p>
-        <h1 class="text-2xl font-semibold leading-8 tracking-tight text-[var(--drixal-ink)]">{{ t("marketplace.title") }}</h1>
-        <p class="mt-3 text-sm leading-5 text-[var(--drixal-muted)]">{{ t("marketplace.description") }}</p>
+  <section class="page-stack overflow-hidden">
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">{{ t("marketplace.title") }}</h1>
+        <p class="page-description">{{ t("marketplace.description") }}</p>
       </div>
-    </div>
+      <UButton :to="auth.session.value.authenticated ? '/register/company' : { path: '/auth/register', query: { next: '/register/company' } }" :label="t('marketplace.registerCompany')" color="neutral" variant="outline" />
+    </header>
 
-    <div class="carbon-card grid max-w-full gap-3 rounded-xl p-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,0.7fr)_auto]">
+    <div class="operation-panel grid max-w-full gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,0.7fr)_auto]">
       <UInput v-model="filters.search" class="min-w-0" :placeholder="t('marketplace.searchPlaceholder')" />
       <USelect v-model="filters.category" :items="categoryOptions" label-key="name" value-key="slug" class="min-w-0" />
       <USelect v-model="filters.city" :items="cityOptions" label-key="label" value-key="value" class="min-w-0" />
@@ -116,10 +116,7 @@ const resetFilters = () => {
 
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="drixal-muted text-sm font-bold">{{ t("marketplace.found", { count: total }) }}</p>
-      <div class="flex flex-wrap gap-2">
-        <UButton :to="auth.session.value.authenticated ? '/register/company' : { path: '/auth/register', query: { next: '/register/company' } }" :label="t('marketplace.registerCompany')" size="sm" color="neutral" variant="outline" />
-        <UButton v-if="auth.session.value.authenticated" :to="auth.workspaceHome.value" :label="t('shell.openWorkspace')" size="sm" />
-      </div>
+      <UButton v-if="auth.session.value.authenticated" :to="auth.workspaceHome.value" :label="t('shell.openWorkspace')" size="sm" />
     </div>
 
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>

@@ -54,16 +54,15 @@ const priorityColor = (value: ServiceOrderItem["priority"]) => ({
 
 <template>
   <section class="grid gap-4 overflow-hidden pb-8">
-    <div class="carbon-card rounded-xl p-5">
-      <p class="mb-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--drixal-blue)]">{{ t("serviceOrders.eyebrow") }}</p>
+    <header class="page-header">
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 class="text-2xl font-semibold leading-8 tracking-tight">{{ t("serviceOrders.title") }}</h1>
+          <h1 class="page-title">{{ t("serviceOrders.title") }}</h1>
           <p class="drixal-muted mt-2 max-w-2xl text-sm">{{ t("serviceOrders.description") }}</p>
         </div>
         <p class="drixal-muted text-sm font-bold">{{ t("serviceOrders.found", { count: orders.length }) }}</p>
       </div>
-    </div>
+    </header>
 
     <div class="carbon-card flex flex-col gap-3 rounded-xl p-3 md:flex-row">
       <UInput v-model="search" class="min-w-0 flex-1" :placeholder="t('serviceOrders.searchPlaceholder')" />
