@@ -61,6 +61,7 @@ export const ar: typeof en = {
     logout: "خروج",
     overview: "نظرة عامة",
     close: "إغلاق",
+    viewAll: "عرض الكل",
   },
   statuses: {
     DRAFT: "مسودة",
@@ -100,6 +101,7 @@ export const ar: typeof en = {
     marketplaceSubtitle: "سوق الخدمات",
     openWorkspace: "فتح مساحة العمل",
     openNavigation: "فتح التنقل",
+    workspace: "مساحة العمل",
   },
   roles: {
     OWNER: "المالك",
@@ -357,6 +359,15 @@ export const ar: typeof en = {
     employeeFocusDescription: "افتح أوامر العمل للتفاصيل الكاملة واستخدم الجدول لتخطيط المهام القادمة.",
     findService: "تحتاج خدمة أخرى؟",
     findServiceDescription: "تصفح المزوّدين المعتمدين وأرسل طلبا خاصا من السوق.",
+    workQueue: "قائمة العمل النشط",
+    workQueueDescription: "أحدث أوامر العمل التي تحتاج متابعة التنفيذ.",
+    demandPipeline: "مسار الطلبات",
+    scheduledWork: "الأعمال المجدولة",
+    noActiveWork: "لا توجد أعمال نشطة تحتاج متابعة.",
+    statusDistribution: "توزيع الحالات",
+    recentOrders: "أحدث أوامر الخدمة",
+    requestJourney: "مسار الطلب",
+    noPendingReviews: "لا توجد شركات بانتظار المراجعة.",
   },
   customerPortal: {
     requestsEyebrow: "نشاط العميل",

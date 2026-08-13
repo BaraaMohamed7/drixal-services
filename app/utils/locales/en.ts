@@ -59,6 +59,7 @@ export const en = {
     logout: "Logout",
     overview: "Overview",
     close: "Close",
+    viewAll: "View all",
   },
   statuses: {
     DRAFT: "Draft",
@@ -98,6 +99,7 @@ export const en = {
     marketplaceSubtitle: "Service marketplace",
     openWorkspace: "Open workspace",
     openNavigation: "Open navigation",
+    workspace: "Workspace",
   },
   roles: {
     OWNER: "Owner",
@@ -355,6 +357,15 @@ export const en = {
     employeeFocusDescription: "Open service orders for complete work details and use the schedule to plan upcoming assignments.",
     findService: "Need another service?",
     findServiceDescription: "Browse approved providers and submit a private request from the marketplace.",
+    workQueue: "Active work queue",
+    workQueueDescription: "Recent orders that need delivery attention.",
+    demandPipeline: "Request pipeline",
+    scheduledWork: "Scheduled work",
+    noActiveWork: "No active work requires attention.",
+    statusDistribution: "Status distribution",
+    recentOrders: "Recent service orders",
+    requestJourney: "Request journey",
+    noPendingReviews: "No companies are waiting for review.",
   },
   customerPortal: {
     requestsEyebrow: "Customer activity",

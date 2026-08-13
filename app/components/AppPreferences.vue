@@ -14,8 +14,8 @@ const themeOptions = computed(() => [
 </script>
 
 <template>
-  <div class="flex items-center gap-2">
-    <USelect :model-value="colorMode.preference" :items="themeOptions" value-key="value" label-key="label" class="w-28" size="sm" :aria-label="t('common.theme')" @update:model-value="colorMode.preference = String($event)" />
-    <USelect :model-value="locale" :items="localeOptions" value-key="value" label-key="label" class="w-28" size="sm" :aria-label="t('common.language')" @update:model-value="setLocale($event as LocaleCode)" />
+  <div class="flex items-center gap-px">
+    <USelect :model-value="colorMode.preference" :items="themeOptions" value-key="value" label-key="label" class="w-24 sm:w-28" size="sm" :aria-label="t('common.theme')" @update:model-value="colorMode.preference = String($event)" />
+    <USelect :model-value="locale" :items="localeOptions" value-key="value" label-key="label" class="w-24 sm:w-28" size="sm" :aria-label="t('common.language')" @update:model-value="setLocale($event as LocaleCode)" />
   </div>
 </template>
