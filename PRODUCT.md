@@ -38,7 +38,7 @@ The primary operating scene is a company manager repeatedly scanning new demand,
 - The product name is Drixal.
 - The official brand blue is `#2546F0`.
 - The product uses Cairo throughout and treats Arabic RTL and English LTR experiences as equally important.
-- The interface follows an enterprise, IBM Carbon-inspired system: structured, restrained, operational, modern, and free of decorative AI-interface tropes.
+- The interface follows Atlassian Design System principles: clear hierarchy, role-based color, purposeful layering, accessible interaction states, and compact operational workflows adapted to Drixal's brand.
 
 ## Evidence on Hand
 

@@ -64,7 +64,7 @@ const priorityColor = (value: ServiceOrderItem["priority"]) => ({
       </div>
     </header>
 
-    <div class="carbon-card flex flex-col gap-3 rounded-xl p-3 md:flex-row">
+    <div class="drixal-card flex flex-col gap-3 p-3 md:flex-row">
       <UInput v-model="search" class="min-w-0 flex-1" :placeholder="t('serviceOrders.searchPlaceholder')" />
       <USelect v-model="status" :items="statusOptions" label-key="label" value-key="value" class="min-w-0 md:w-56" />
     </div>

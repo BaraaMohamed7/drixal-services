@@ -22,7 +22,7 @@ watch(query, (value) => router.replace({ query: value }), { deep: true });
 
 <template>
   <section class="grid gap-4 overflow-hidden pb-8">
-    <div class="carbon-card rounded-xl p-5">
+    <div class="drixal-card p-5">
       <p class="mb-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--drixal-blue)]">{{ t("customers.eyebrow") }}</p>
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
@@ -33,7 +33,7 @@ watch(query, (value) => router.replace({ query: value }), { deep: true });
       </div>
     </div>
 
-    <div class="carbon-card rounded-xl p-3">
+    <div class="drixal-card p-3">
       <UInput v-model="search" class="max-w-xl" :placeholder="t('customers.searchPlaceholder')" />
     </div>
 

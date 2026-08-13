@@ -88,7 +88,7 @@ const submit = () => {
 </script>
 
 <template>
-  <form class="carbon-card grid gap-4 rounded-xl p-4 sm:p-5" @submit.prevent="submit">
+  <form class="drixal-card grid gap-4 p-4 sm:p-5" @submit.prevent="submit">
     <div class="grid gap-2">
       <label class="text-sm font-bold text-[var(--drixal-ink)]" for="name">{{ t("serviceForm.serviceName") }}</label>
       <UInput id="name" v-model="form.name" required class="min-w-0" :placeholder="t('serviceForm.serviceNamePlaceholder')" />

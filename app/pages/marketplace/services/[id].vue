@@ -98,25 +98,25 @@ const submitRequest = async () => {
 
     <div v-else-if="service" class="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       <article class="drixal-panel min-w-0 overflow-hidden">
-        <div class="bg-[var(--drixal-navy)] p-5 text-[var(--ui-text-inverted)] md:p-6">
+        <div class="border-b border-[var(--color-brand-border)] bg-[var(--color-brand-subtle)] p-5 md:p-6">
           <div class="mb-4 flex flex-wrap gap-2">
             <span class="drixal-inverted-chip px-3 py-1 text-xs font-bold">{{ service.category.name }}</span>
             <span class="drixal-inverted-chip px-3 py-1 text-xs font-semibold opacity-80">{{ service.locationType }}</span>
           </div>
           <h1 class="text-2xl font-semibold leading-8 tracking-tight">{{ service.name }}</h1>
-          <p class="mt-3 max-w-2xl text-sm leading-5 text-[var(--ui-text-inverted)] opacity-75">{{ service.description }}</p>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-[var(--drixal-muted)]">{{ service.description }}</p>
         </div>
 
         <div class="grid gap-3 p-5 md:grid-cols-3 md:p-6">
-          <div class="bg-[var(--drixal-soft)] p-4">
+          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
             <p class="drixal-muted text-xs font-bold">{{ t("serviceDetail.pricing") }}</p>
             <p class="mt-2 text-xl font-black">{{ formatPrice }}</p>
           </div>
-          <div class="bg-[var(--drixal-soft)] p-4">
+          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
             <p class="drixal-muted text-xs font-bold">{{ t("common.duration") }}</p>
             <p class="mt-2 text-xl font-black">{{ service.duration ? `${service.duration} min` : t("serviceDetail.flexible") }}</p>
           </div>
-          <div class="bg-[var(--drixal-soft)] p-4">
+          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
             <p class="drixal-muted text-xs font-bold">{{ t("serviceDetail.scheduling") }}</p>
             <p class="mt-2 text-xl font-black">{{ service.scheduling.required ? t("serviceDetail.required") : t("serviceDetail.optional") }}</p>
           </div>
@@ -131,21 +131,21 @@ const submitRequest = async () => {
           <p v-if="requestSent" class="drixal-success mb-4 rounded-xl p-3 text-sm font-bold">{{ t("requestForm.success") }}</p>
           <p v-if="requestError" class="drixal-danger mb-4 rounded-xl p-3 text-sm font-bold">{{ requestError }}</p>
 
-           <div v-if="!auth.session.value.authenticated" class="border border-[var(--drixal-line)] bg-[var(--drixal-soft)] p-4">
+           <div v-if="!auth.session.value.authenticated" class="rounded-lg border border-[var(--color-info-border)] bg-[var(--color-info-bg)] p-4">
              <p class="font-bold">{{ t("requestForm.authRequired") }}</p>
              <p class="drixal-muted mt-1 text-sm">{{ t("requestForm.authRequiredDescription") }}</p>
              <UButton class="mt-4" :to="{ path: '/auth/login', query: { next: route.fullPath } }" :label="t('auth.signIn')" />
            </div>
            <form v-else class="grid gap-3" @submit.prevent="submitRequest">
             <div class="grid gap-3 sm:grid-cols-2">
-              <UInput v-model="requestForm.customer.name" required class="min-w-0" :placeholder="t('requestForm.namePlaceholder')" />
-              <UInput v-model="requestForm.customer.phone" required class="min-w-0" :placeholder="t('requestForm.phonePlaceholder')" />
-              <UInput v-model="requestForm.customer.email" type="email" class="min-w-0" :placeholder="t('requestForm.emailPlaceholder')" />
-              <UInput v-model="requestForm.customer.city" class="min-w-0" :placeholder="t('requestForm.cityPlaceholder')" />
+              <UFormField :label="t('requestForm.name')" required><UInput v-model="requestForm.customer.name" required autocomplete="name" class="min-w-0 w-full" :placeholder="t('requestForm.namePlaceholder')" /></UFormField>
+              <UFormField :label="t('common.phone')" required><UInput v-model="requestForm.customer.phone" type="tel" required autocomplete="tel" class="min-w-0 w-full" :placeholder="t('requestForm.phonePlaceholder')" /></UFormField>
+              <UFormField :label="t('common.email')"><UInput v-model="requestForm.customer.email" type="email" autocomplete="email" class="min-w-0 w-full" :placeholder="t('requestForm.emailPlaceholder')" /></UFormField>
+              <UFormField :label="t('common.city')"><UInput v-model="requestForm.customer.city" autocomplete="address-level2" class="min-w-0 w-full" :placeholder="t('requestForm.cityPlaceholder')" /></UFormField>
             </div>
-            <UInput v-model="requestForm.preferredDate" type="date" />
-            <UTextarea v-model="requestForm.message" required :rows="3" class="min-w-0" :placeholder="t('requestForm.messagePlaceholder')" />
-            <UButton type="submit" :disabled="requestPending" :label="requestPending ? t('requestForm.sending') : t('requestForm.submit')" />
+            <UFormField :label="t('requestForm.preferredDate')"><UInput v-model="requestForm.preferredDate" type="date" class="w-full" /></UFormField>
+            <UFormField :label="t('requestForm.message')" required><UTextarea v-model="requestForm.message" required :rows="3" class="min-w-0 w-full" :placeholder="t('requestForm.messagePlaceholder')" /></UFormField>
+            <div class="flex justify-end"><UButton type="submit" :loading="requestPending" :disabled="requestPending" :label="t('requestForm.submit')" /></div>
           </form>
         </div>
       </article>
@@ -156,15 +156,14 @@ const submitRequest = async () => {
         <p class="drixal-muted mt-3 leading-7">{{ service.company.description || t("serviceDetail.providerFallback") }}</p>
 
         <div class="mt-6 grid gap-3 text-sm font-bold text-[var(--drixal-ink)]">
-          <div class="bg-[var(--drixal-soft)] p-4">
+          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
             {{ t("common.location") }}: {{ service.company.location.area }}{{ service.company.location.area && service.company.location.city ? ", " : "" }}{{ service.company.location.city }}
           </div>
-          <div class="bg-[var(--drixal-soft)] p-4">
+          <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
             {{ t("common.rating") }}: {{ service.company.rating || 0 }}/5
           </div>
         </div>
 
-        <UButton class="mt-6 w-full" :label="t('serviceDetail.bookingComingSoon')" disabled />
       </aside>
     </div>
   </section>

@@ -105,12 +105,12 @@ const resetFilters = () => {
       <UButton :to="auth.session.value.authenticated ? '/register/company' : { path: '/auth/register', query: { next: '/register/company' } }" :label="t('marketplace.registerCompany')" color="neutral" variant="outline" />
     </header>
 
-    <div class="operation-panel grid max-w-full gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,0.7fr)_auto]">
-      <UInput v-model="filters.search" class="min-w-0" :placeholder="t('marketplace.searchPlaceholder')" />
-      <USelect v-model="filters.category" :items="categoryOptions" label-key="name" value-key="slug" class="min-w-0" />
-      <USelect v-model="filters.city" :items="cityOptions" label-key="label" value-key="value" class="min-w-0" />
-      <UInput v-model="filters.minPrice" type="number" min="0" class="min-w-0" :placeholder="t('marketplace.minPrice')" />
-      <UInput v-model="filters.maxPrice" type="number" min="0" class="min-w-0" :placeholder="t('marketplace.maxPrice')" />
+    <div class="operation-panel grid max-w-full items-end gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,0.7fr)_auto]">
+      <UFormField :label="t('marketplace.searchLabel')"><UInput v-model="filters.search" class="min-w-0 w-full" :placeholder="t('marketplace.searchPlaceholder')" /></UFormField>
+      <UFormField :label="t('common.category')"><USelect v-model="filters.category" :items="categoryOptions" label-key="name" value-key="slug" class="min-w-0 w-full" /></UFormField>
+      <UFormField :label="t('common.city')"><USelect v-model="filters.city" :items="cityOptions" label-key="label" value-key="value" class="min-w-0 w-full" /></UFormField>
+      <UFormField :label="t('marketplace.minPrice')"><UInput v-model="filters.minPrice" type="number" min="0" class="min-w-0 w-full" /></UFormField>
+      <UFormField :label="t('marketplace.maxPrice')"><UInput v-model="filters.maxPrice" type="number" min="0" class="min-w-0 w-full" /></UFormField>
       <UButton :label="t('common.reset')" color="neutral" variant="outline" class="sm:col-span-2 lg:col-span-1" @click="resetFilters" />
     </div>
 
@@ -122,8 +122,29 @@ const resetFilters = () => {
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>
     <p v-else-if="pending" class="drixal-panel rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("marketplace.loading") }}</p>
 
-    <div v-else-if="services.length" class="table-scroll">
-      <table class="business-table">
+    <template v-else-if="services.length">
+      <div class="grid gap-3 sm:hidden">
+        <NuxtLink v-for="service in services" :key="service.id" :to="`/marketplace/services/${service.slug}`" class="drixal-panel block p-4 transition-colors hover:bg-[var(--drixal-hover)]">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="truncate font-bold">{{ service.name }}</h2>
+              <p class="mt-1 truncate text-xs text-[var(--drixal-muted)]">{{ service.company.name }}</p>
+            </div>
+            <UBadge :label="service.category.name" color="primary" variant="soft" />
+          </div>
+          <p class="mt-3 line-clamp-2 text-sm leading-5 text-[var(--drixal-muted)]">{{ service.description }}</p>
+          <div class="mt-4 flex items-end justify-between gap-4 border-t border-[var(--drixal-line)] pt-3">
+            <div class="text-xs text-[var(--drixal-muted)]">
+              <p>{{ service.company.location.city || t("serviceDetail.flexible") }} · {{ service.locationType }}</p>
+              <p class="mt-1 text-sm font-bold text-[var(--drixal-ink)]">{{ formatPrice(service) }}</p>
+            </div>
+            <span class="inline-flex items-center gap-1 text-sm font-bold text-[var(--drixal-blue)]">{{ t("marketplace.viewService") }} <UIcon name="i-lucide-arrow-right" class="size-4 rtl:rotate-180" /></span>
+          </div>
+        </NuxtLink>
+      </div>
+
+      <div class="table-scroll hidden sm:block">
+        <table class="business-table">
         <thead>
           <tr>
             <th>{{ t("common.service") }}</th>
@@ -137,7 +158,7 @@ const resetFilters = () => {
         <tbody>
           <tr v-for="service in services" :key="service.id">
             <td>
-              <div class="font-bold text-[var(--drixal-ink)]">{{ service.name }}</div>
+              <NuxtLink :to="`/marketplace/services/${service.slug}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ service.name }}</NuxtLink>
               <div class="drixal-muted mt-1 max-w-md truncate text-xs">{{ service.description }}</div>
             </td>
             <td>
@@ -150,8 +171,9 @@ const resetFilters = () => {
             <td><UButton :to="`/marketplace/services/${service.slug}`" :label="t('marketplace.viewService')" size="sm" /></td>
           </tr>
         </tbody>
-      </table>
-    </div>
+        </table>
+      </div>
+    </template>
 
     <div v-else class="drixal-panel rounded-xl border-dashed p-6 text-center">
       <h2 class="text-xl font-black">{{ t("marketplace.noResultsTitle") }}</h2>

@@ -3,10 +3,10 @@ import { Comment, h } from "vue";
 
 const DesignContract = () => h(Comment, `
 THESIS: Drixal is an operational control plane, not a collection of decorative SaaS cards.
-OWN-WORLD: Cairo type, Carbon layer hierarchy, hairline grids, white and graphite surfaces, and Drixal blue for action and state.
+OWN-WORLD: Cairo type, Atlassian-inspired semantic tokens, purposeful surface elevation, comfortable geometry, and Drixal blue for primary action.
 STORY: Each role sees current service work, finds exceptions, and moves directly to the next operational decision.
-FIRST VIEWPORT: A 48px global bar and compact rail frame a page header, contiguous metrics, a real work queue, and a status pipeline.
-FORM: Carbon-inspired enterprise control plane, pinned by the brief; seed ee7ca390.
+FIRST VIEWPORT: A calm product shell frames the current context, next action, operational queue, and supporting metrics.
+FORM: Atlassian-inspired teamwork software adapted for bilingual service operations, not a visual copy of Atlassian products.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
 `);
 </script>

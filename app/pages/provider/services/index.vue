@@ -87,18 +87,18 @@ const unpublish = async (service: ServiceItem) => {
           <p class="mt-3 max-w-xl text-sm leading-6 text-[var(--drixal-muted)]">{{ t("providerServices.description") }}</p>
         </div>
 
-        <div class="border border-[var(--drixal-line)] p-4">
+        <div class="rounded-lg bg-[var(--drixal-soft)] p-4">
           <p class="text-sm font-bold text-[var(--drixal-muted)]">{{ t("providerServices.currentSlice") }}</p>
           <div class="mt-4 grid grid-cols-3 gap-2 text-center">
-            <div class="border border-[var(--drixal-line)] p-3">
+            <div class="rounded-md bg-[var(--drixal-surface)] p-3">
               <p class="text-xl font-black">{{ services.length }}</p>
               <p class="drixal-muted text-xs font-bold">{{ t("common.services") }}</p>
             </div>
-            <div class="border border-[var(--drixal-line)] p-3">
+            <div class="rounded-md bg-[var(--drixal-surface)] p-3">
               <p class="text-xl font-black">{{ services.filter((service) => service.publicationStatus === "PUBLISHED").length }}</p>
               <p class="text-xs font-bold">{{ t("providerServices.published") }}</p>
             </div>
-            <div class="border border-[var(--drixal-line)] p-3">
+            <div class="rounded-md bg-[var(--drixal-surface)] p-3">
               <p class="text-xl font-black">{{ services.filter((service) => service.publicationStatus === "DRAFT").length }}</p>
               <p class="text-xs font-bold">{{ t("providerServices.drafts") }}</p>
             </div>
@@ -107,7 +107,7 @@ const unpublish = async (service: ServiceItem) => {
       </div>
     </header>
 
-    <div class="carbon-card flex flex-col gap-3 rounded-xl p-3 md:flex-row md:items-center md:justify-between">
+    <div class="drixal-card flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between">
       <div class="flex flex-1 flex-col gap-3 md:flex-row">
         <UInput v-model="search" class="min-w-0 flex-1" :placeholder="t('providerServices.searchPlaceholder')" />
         <USelect v-model="publicationStatus" :items="statusOptions" label-key="label" value-key="value" class="min-w-0 md:w-56" />

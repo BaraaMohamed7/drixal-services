@@ -20,7 +20,7 @@ const statusColor = computed(() => ({
 
 <template>
   <section class="grid gap-4 overflow-hidden pb-8">
-    <div class="carbon-card rounded-xl p-5">
+    <div class="drixal-card p-5">
       <p class="mb-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--drixal-blue)]">{{ t("companyProfile.eyebrow") }}</p>
       <h1 class="text-2xl font-semibold leading-8 tracking-tight">{{ t("companyProfile.title") }}</h1>
       <p class="drixal-muted mt-2 max-w-2xl text-sm">{{ t("companyProfile.description") }}</p>
@@ -30,7 +30,7 @@ const statusColor = computed(() => ({
     <p v-else-if="pending" class="drixal-panel rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("companyProfile.loading") }}</p>
 
     <div v-else-if="company" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div class="carbon-card rounded-xl p-5">
+      <div class="drixal-card p-5">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 class="text-xl font-semibold">{{ company.name }}</h2>

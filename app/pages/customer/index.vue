@@ -56,7 +56,7 @@ const openCompany = async (companyId: string) => {
           <p class="text-xs font-semibold text-[var(--drixal-muted)]">{{ t("dashboards.nextService") }}</p>
           <div class="mt-2 flex flex-wrap items-center gap-2">
             <h2 class="truncate text-lg font-semibold">{{ nextOrder.title }}</h2>
-            <UBadge :label="t(`statuses.${nextOrder.status}`)" variant="soft" />
+            <UBadge :label="t(`statuses.${nextOrder.status}`)" :color="statusColor(nextOrder.status)" variant="soft" />
           </div>
           <p class="mt-1 text-sm text-[var(--drixal-muted)]">{{ nextOrder.companyId?.name || "-" }}<template v-if="nextOrder.scheduledDate"> · {{ formatDate(nextOrder.scheduledDate) }}</template></p>
         </div>
@@ -69,7 +69,7 @@ const openCompany = async (companyId: string) => {
     <div class="dashboard-grid">
       <section class="operation-panel">
         <div class="panel-header"><h2 class="panel-title">{{ t("dashboards.recentOrders") }}</h2><NuxtLink to="/customer/orders" class="panel-link">{{ t("common.viewAll") }}</NuxtLink></div>
-        <div v-if="orderItems.length" class="table-scroll border-0"><table class="business-table"><thead><tr><th>{{ t("common.order") }}</th><th>{{ t("common.provider") }}</th><th>{{ t("common.service") }}</th><th>{{ t("common.status") }}</th><th>{{ t("common.scheduledDate") }}</th></tr></thead><tbody><tr v-for="order in orderItems.slice(0, 6)" :key="order._id"><td><NuxtLink :to="`/customer/orders/${order._id}`" class="font-bold text-[var(--drixal-blue)]">{{ order.orderNumber }}</NuxtLink><div class="mt-1 max-w-52 truncate text-xs text-[var(--drixal-muted)]">{{ order.title }}</div></td><td>{{ order.companyId?.name || "-" }}</td><td>{{ order.serviceId?.name || "-" }}</td><td><UBadge :label="t(`statuses.${order.status}`)" variant="soft" /></td><td>{{ formatDate(order.scheduledDate) }}</td></tr></tbody></table></div>
+        <div v-if="orderItems.length" class="table-scroll border-0"><table class="business-table"><thead><tr><th>{{ t("common.order") }}</th><th>{{ t("common.provider") }}</th><th>{{ t("common.service") }}</th><th>{{ t("common.status") }}</th><th>{{ t("common.scheduledDate") }}</th></tr></thead><tbody><tr v-for="order in orderItems.slice(0, 6)" :key="order._id"><td><NuxtLink :to="`/customer/orders/${order._id}`" class="font-bold text-[var(--drixal-blue)]">{{ order.orderNumber }}</NuxtLink><div class="mt-1 max-w-52 truncate text-xs text-[var(--drixal-muted)]">{{ order.title }}</div></td><td>{{ order.companyId?.name || "-" }}</td><td>{{ order.serviceId?.name || "-" }}</td><td><UBadge :label="t(`statuses.${order.status}`)" :color="statusColor(order.status)" variant="soft" /></td><td>{{ formatDate(order.scheduledDate) }}</td></tr></tbody></table></div>
         <div v-else class="p-6"><p class="font-semibold">{{ t("customerPortal.noOrders") }}</p><p class="mt-1 text-sm text-[var(--drixal-muted)]">{{ t("customerPortal.noOrdersDescription") }}</p></div>
       </section>
       <section class="operation-panel"><div class="panel-header"><h2 class="panel-title">{{ t("dashboards.requestJourney") }}</h2><NuxtLink to="/customer/requests" class="panel-link">{{ t("common.viewAll") }}</NuxtLink></div><div class="pipeline-list"><div v-for="item in journey" :key="item.status" class="pipeline-item"><span class="pipeline-label">{{ item.label }}</span><span class="pipeline-value">{{ item.value }}</span><div class="pipeline-track"><div class="pipeline-fill" :style="{ width: `${(item.value / journeyMax) * 100}%` }" /></div></div></div></section>
@@ -86,7 +86,7 @@ const openCompany = async (companyId: string) => {
             <p class="truncate font-semibold">{{ membership.company?.name }}</p>
             <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--drixal-muted)]">
               <span>{{ t(`roles.${membership.role}`) }}</span>
-              <UBadge v-if="membership.company" :label="t(`statuses.${membership.company.status}`)" variant="soft" size="sm" />
+              <UBadge v-if="membership.company" :label="t(`statuses.${membership.company.status}`)" :color="statusColor(membership.company.status)" variant="soft" size="sm" />
             </div>
           </div>
           <UButton v-if="membership.company" :label="t('dashboards.openCompany')" color="neutral" variant="outline" size="sm" :loading="openingCompanyId === membership.company.id" :disabled="Boolean(openingCompanyId)" @click="openCompany(membership.company.id)" />

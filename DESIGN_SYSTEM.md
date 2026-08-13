@@ -1,186 +1,216 @@
 # Drixal Service Platform Design System
 
-This product is an enterprise Service Management Platform. The UI must feel professional, reliable, structured, operational, modern but restrained, and suitable for daily use by business teams.
+Drixal is a multi-tenant service operations product. Its interface follows Atlassian Design System principles while retaining Drixal's own brand, domain language, Cairo typography, and equal Arabic/English support. It must not imitate a specific Atlassian product.
 
-## Direction
+## Product Direction
 
-- Use IBM Carbon principles, Nuxt UI components, Linear-level restraint, Stripe Dashboard information hierarchy, and modern ERP density as references.
-- Do not copy any product visually.
-- Function before decoration: every visual element must help users understand, act, navigate, identify status, or detect problems.
-- This is not a marketing website. Avoid giant headings, oversized cards, excessive whitespace, illustrations, gradients, glassmorphism, decorative blobs, neon colors, and excessive shadows.
-- Prefer dense but comfortable enterprise workflows.
-- Consistency over creativity: do not invent new colors, spacing values, radii, button styles, table styles, or badges unless required.
+- Optimize for clarity, collaboration, and progress through a service lifecycle.
+- Put the next valid action and operational exceptions before decorative reporting.
+- Use familiar, comfortable product geometry and predictable interaction states.
+- Preserve dense, scannable queues for managers without making customer or employee experiences feel like back-office software.
+- Avoid marketing-site composition inside authenticated product workflows.
 
 ## Technology
 
 - Use Nuxt, Vue, Tailwind CSS, and Nuxt UI.
-- Prefer Nuxt UI components for buttons, inputs, selects, tables, badges, modals, drawers, dropdowns, tabs, tooltips, command palette, pagination, breadcrumbs, and alerts.
-- Do not recreate existing Nuxt UI components using custom Tailwind markup without a clear reason.
+- Prefer Nuxt UI for controls, menus, forms, overlays, pagination, and feedback.
+- Reuse semantic Drixal classes for page headers, panels, metrics, tables, and states.
+- Do not add Atlaskit or copy Atlassian source components. Apply the system principles through the established stack.
 
-## Brand Color
+## Foundations
 
-Official Drixal Brand Blue: `#2546F0`.
+### Color Roles
 
-Use it for primary actions, active navigation, selected states, links where appropriate, focus indicators, brand accents, and important interactive elements. Do not replace it with generic Tailwind blue.
+Use semantic roles rather than selecting arbitrary palette values.
 
-## Drixal Scale
+| Role | Purpose |
+| --- | --- |
+| Neutral | Default text, navigation, secondary actions, and structural surfaces |
+| Brand | Primary actions, links, focus, selected navigation, and selected state |
+| Information | In-progress or informative states |
+| Success | Favorable completed outcomes |
+| Warning | Caution and states requiring attention |
+| Danger | Failure, rejection, destructive actions, and serious errors |
+| Discovery | Onboarding and genuinely new capabilities |
+
+The official Drixal brand blue is `#2546F0`. Brand blue must not represent success, warning, or danger.
+
+### Light Theme
 
 | Token | Value |
 | --- | --- |
-| Drixal 50 | `#EEF1FF` |
-| Drixal 100 | `#DFE5FF` |
-| Drixal 200 | `#C4CEFF` |
-| Drixal 300 | `#A0AFFF` |
-| Drixal 400 | `#7489FF` |
-| Drixal 500 | `#4B65F7` |
-| Drixal 600 | `#2546F0` |
-| Drixal 700 | `#1E39CC` |
-| Drixal 800 | `#1D32A6` |
-| Drixal 900 | `#1B2D82` |
-| Drixal 950 | `#11194F` |
-
-## Theme Architecture
-
-- Support Light, Dark, and System themes.
-- Components must use semantic tokens: background, surface, surface-muted, border, text-primary, text-secondary, primary, danger, success, warning.
-- Avoid page-level hardcoded colors like `bg-white`, `text-gray-800`, `border-gray-200`, and `bg-blue-600`.
-- Use Drixal semantic variables and Nuxt UI theme configuration.
-
-## Light Theme Tokens
-
-| Token | Value |
-| --- | --- |
-| Background | `#F7F8FC` |
+| Background | `#F7F8F9` |
 | Surface | `#FFFFFF` |
-| Surface raised | `#FFFFFF` |
-| Surface muted | `#F3F5F9` |
-| Surface hover | `#EEF1F6` |
-| Surface selected | `#EEF1FF` |
-| Border | `#E2E6EE` |
-| Border strong | `#CBD2DE` |
-| Text primary | `#111827` |
-| Text secondary | `#475569` |
-| Text muted | `#64748B` |
-| Text disabled | `#94A3B8` |
+| Surface muted / sunken | `#F1F2F4` |
+| Surface pressed | `#DCDFE4` |
+| Border | `#DCDFE4` |
+| Border strong | `#8590A2` |
+| Text primary | `#172B4D` |
+| Text secondary | `#44546F` |
+| Text muted | `#626F86` |
 | Brand | `#2546F0` |
-| Brand hover | `#1E39CC` |
-| Brand active | `#1D32A6` |
 | Brand subtle | `#EEF1FF` |
-| Brand subtle hover | `#DFE5FF` |
-| Brand border | `#C4CEFF` |
-| Brand text | `#2546F0` |
-| Focus ring | `#7489FF` |
 
-## Dark Theme Tokens
+### Dark Theme
 
 | Token | Value |
 | --- | --- |
-| Background | `#0B1020` |
-| Surface | `#111827` |
-| Surface raised | `#151E31` |
-| Surface muted | `#1B2435` |
-| Surface hover | `#202B3F` |
-| Surface selected | `#182451` |
-| Border | `#273449` |
-| Border strong | `#35435B` |
-| Text primary | `#F8FAFC` |
-| Text secondary | `#CBD5E1` |
-| Text muted | `#94A3B8` |
-| Text disabled | `#64748B` |
-| Brand | `#2546F0` |
-| Brand hover | `#4B65F7` |
-| Brand active | `#1E39CC` |
+| Background | `#161A1D` |
+| Surface | `#1D2125` |
+| Surface raised | `#22272B` |
+| Surface overlay | `#282E33` |
+| Border | `#A6C5E229` |
+| Border strong | `#738496` |
+| Text primary | `#B6C2CF` |
+| Text secondary | `#9FADBC` |
+| Text muted | `#8C9BAB` |
+| Brand | `#4B65F7` |
 | Brand text | `#A0AFFF` |
-| Brand icon | `#7489FF` |
-| Brand subtle | `#161F4D` |
-| Brand subtle hover | `#1B2865` |
-| Brand border | `#354CC5` |
-| Focus ring | `#7489FF` |
 
-Dark mode must not simply invert light mode. Avoid pure black surfaces, neon blue, glowing borders, and excessive saturation.
+Dark mode uses progressively lighter elevated surfaces. It does not invert light mode or use pure black.
 
-## Semantic Colors
+### Typography
 
-- Success: light `#15803D` on `#F0FDF4`, dark `#4ADE80` on `#102A1A`.
-- Warning: light `#B45309` on `#FFFBEB`, dark `#FBBF24` on `#30220C`.
-- Danger: light `#B91C1C` on `#FEF2F2`, dark `#F87171` on `#351517`.
-- Information: light `#1D4ED8` on `#EFF6FF`, dark `#60A5FA` on `#10264D`.
-- Never use Drixal blue to represent success, warning, or failure.
+Cairo Variable is the product typeface for both Arabic and English. Atlassian Sans is not used because it does not satisfy Drixal's bilingual requirement.
 
-## Typography
+| Role | Size / line height | Weight |
+| --- | --- | --- |
+| Page title | `24-28px / 32px` | Bold |
+| Section heading | `16-20px / 24px` | Bold |
+| Body | `14px / 20px` | Regular |
+| Small body | `12px / 16px` | Regular or medium |
+| Metric | `28-32px / 32px` | Bold |
 
-- Use Inter or the existing professional sans-serif font.
-- Page title: 24px, weight 600, line-height 32px.
-- Page subtitle: 14px, regular, muted.
-- Section title: 16-18px, weight 600.
-- Body: 14px, line-height 20px.
-- Secondary information: 13px, muted.
-- Tables: 13-14px.
+- Use semantic heading levels in sequence.
+- Use body medium when text aligns with icons or controls.
+- Use bold sparingly for labels that need clear emphasis.
+- Use tabular numerals for metrics, dates, and operational identifiers.
+- Do not force uppercase or wide tracking in Arabic.
 
-## Spacing
+### Spacing
 
-Use a 4px base scale: 4, 8, 12, 16, 20, 24, 32, 40, 48. Avoid arbitrary spacing.
+Use an 8px base with half steps where compact UI needs them:
+
+`2, 4, 6, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80px`
+
+- `2-8px`: icons, badges, compact control internals.
+- `12-24px`: component padding and related content groups.
+- `32-80px`: page-level layout and major separation.
+- Group related controls by proximity and separate unrelated decisions with more space.
+
+### Radius
+
+| Token | Value | Use |
+| --- | --- | --- |
+| Detail | `2px` | Checkboxes, keyboard hints |
+| Small | `4px` | Badges, lozenges, compact labels |
+| Interactive | `6px` | Buttons, inputs, selects, navigation items |
+| Container | `8px` | Cards, in-page panels, dropdowns |
+| Large | `12px` | Tables, drawers, modals, large containers |
+| Full | `999px` | Avatars and intentionally pill-shaped user UI |
+
+Radius communicates scale. Do not apply large rounding indiscriminately.
+
+### Elevation
+
+Use four conceptual layers:
+
+1. Sunken: grouped backdrops such as schedule columns or filter wells.
+2. Default: normal page and bordered panels.
+3. Raised: movable or singular focal cards only.
+4. Overlay: dropdowns, drawers, dialogs, and popovers.
+
+- Default product panels use a surface and border, not a shadow.
+- Raised shadows are exceptional and limited to one focal region.
+- Overlays always pair the overlay surface with the overlay shadow.
+- Dark mode differentiates elevation with surface tone as well as shadow.
 
 ## Layout
 
-- Desktop uses sidebar, top bar, and main content.
-- Sidebar width should be roughly 240-260px and group related functionality.
-- Major page header pattern: breadcrumb where useful, page title, primary action, short description, secondary actions.
-- Do not place page titles inside decorative cards unless the existing page structure requires a simple bordered panel.
+- Desktop uses a top navigation bar, contextual side navigation, and main content.
+- The current Personal/company/platform context must remain visible and switchable.
+- Selected navigation uses a rounded subtle-brand background, not a decorative side stripe.
+- Page headers are part of page flow, not isolated decorative cards.
+- Main content uses 16px mobile, 24px tablet, and 32px desktop gutters.
+- Use logical `start` and `end` properties so RTL and LTR share one implementation.
 
 ## Components
 
-- Cards group meaningful information only. Avoid cards inside cards.
-- Card styling: surface background, one default border, 8-10px radius, no shadow or extremely subtle shadow only when layering is needed.
-- Radius: inputs/buttons 6-8px, cards 8-10px, dropdowns 8px, modals 10-12px, badges 4-6px.
-- Use shadows only for dropdowns, modals, slideovers, floating menus, and command palette.
+### Buttons
 
-## Tables
+- Primary actions use Drixal blue and white text.
+- Secondary actions use a neutral surface or subtle background.
+- Destructive actions use danger styling and confirmation where impact is high.
+- Use one primary action per decision region.
+- Use icon-only buttons only when the icon is conventional and an accessible label exists.
 
-- Tables are a primary interaction pattern for service definitions, service requests, service orders, users, companies, and customers.
-- Do not convert structured business datasets into decorative card grids.
-- Table toolbar usually contains search, filters, optional view controls, and primary action.
-- Avoid exposing five action buttons in every row. Prefer a menu for secondary row actions.
-- Do not alternate row colors unless it improves usability.
+### Navigation
 
-## Forms
+- Navigation labels describe destinations, not abstract modules.
+- The workspace selector identifies Personal, company name and role, or Platform Administration.
+- Desktop and mobile expose the same destinations and selected context.
+- Mobile navigation uses an accessible slideover with focus management and Escape behavior.
 
-- Forms must reflect business meaning and group related fields.
-- Always show labels. Do not rely only on placeholders.
-- Required fields must be marked and validation shown close to the input.
-- Use slideovers/drawers for short contextual workflows and dedicated pages for complex workflows.
+### Cards and Panels
 
-## States
+- Cards group one meaningful unit; avoid cards inside cards.
+- Use whitespace before adding another boundary.
+- Default panels use an 8px radius, one subtle border, and no shadow.
+- Use a muted/sunken region for related facts or controls within a panel.
 
-- Empty states explain what to do next and avoid oversized illustrations.
-- Loading states should prefer skeletons, table row skeletons, component-level loading, and button-level loading.
-- Errors should explain what happened and what the user can do.
-- Toasts are for operation results, not persistent attention.
+### Status Lozenges
 
-## Responsive Design
+- Use compact 4px rounded labels with semantic background and text.
+- Status text is always visible so color is not the only signal.
+- Brand color is acceptable for selected or informational state, never successful completion.
 
-- Desktop is primary, but tablet and mobile must remain usable.
-- Mobile uses drawer navigation, single-column forms, simplified lists, and horizontal table scroll only when necessary.
+### Forms
 
-## Accessibility
+- Always show labels; placeholders provide examples only.
+- Mark required fields and keep validation next to the field.
+- Preserve known user information and prefill it where appropriate.
+- Explain business consequences before submission.
+- Protect against duplicate submissions and show pending state on the triggering action.
+- Use dedicated pages for complex workflows and drawers for short contextual actions.
 
-- Ensure keyboard navigation, visible focus states, sufficient contrast, proper labels, accessible table headers, semantic HTML, meaningful button labels, and no meaning conveyed by color alone.
+### Tables and Lists
 
-## AI Rules
+- Keep tables for structured business datasets on desktop.
+- Use a 12px rounded table container and a subtle neutral header surface.
+- Make record titles the primary navigation target.
+- Keep row actions contextual and place secondary actions in an overflow menu.
+- On mobile, use simplified record lists when horizontal scrolling would hide primary actions.
+- Reserve horizontal scrolling for genuinely tabular comparisons.
 
-When implementing UI:
+### Feedback
 
-1. Read this file first.
-2. Inspect existing components and similar screens.
-3. Reuse established patterns before creating new ones.
-4. Prefer Nuxt UI components.
-5. Use Drixal semantic theme tokens.
-6. Do not introduce new design tokens unnecessarily.
-7. Keep business data structured and scannable.
-8. Use tables for large structured collections.
-9. Preserve business functionality and domain behavior.
-10. Verify Light and Dark themes.
-11. Do not redesign unrelated application areas.
-12. Avoid gradients, glassmorphism, neon colors, giant hero sections, huge headings, decorative blobs, excessive rounded corners, oversized cards, excessive shadows, arbitrary spacing, cards inside cards, dashboards only made of statistics, and marketing-site patterns.
+- Loading states use component-level skeletons where practical.
+- Error messages explain impact and offer retry or recovery.
+- Empty states explain why the area is empty and identify the next step.
+- Confirmation is required for rejection, suspension, cancellation, unpublishing, and other high-impact mutations.
+- Operation results are announced through an `aria-live` region or accessible toast.
 
-The final product should feel calm, structured, efficient, trustworthy, professional, modern, operational, and consistent. It should not feel playful, futuristic, experimental, flashy, decorative, or over-designed.
+## Workflow Rules
+
+- UI controls must reflect server-authorized next actions.
+- Do not expose actions that the selected workspace, role, company status, or record state cannot perform.
+- Keep customer-safe information separate from internal company data.
+- Place assignment and schedule controls near the order state they affect.
+- Put active, overdue, blocked, unassigned, and unscheduled work before decorative totals.
+
+## Accessibility and Localization
+
+- Meet WCAG AA contrast: `4.5:1` for normal text and `3:1` for essential UI boundaries and large text.
+- Preserve visible focus with a 2px offset.
+- Support keyboard navigation, focus return, semantic labels, and non-color status cues.
+- Verify every changed workflow in English LTR and Arabic RTL.
+- Localize statuses, enums, dates, numbers, currency, duration, and validation text.
+
+## Avoid
+
+- Do not copy Jira, Confluence, or Trello layouts or branding.
+- Do not use gradients, glassmorphism, neon color, glowing borders, or decorative AI motifs.
+- Do not use oversized hero sections or excessive empty space in operational screens.
+- Do not turn every region into a raised card.
+- Do not fabricate reviews, ratings, performance trends, or business evidence.
+- Do not let visual styling obscure tenant context, permissions, or the next valid action.

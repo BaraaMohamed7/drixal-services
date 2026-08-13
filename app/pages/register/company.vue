@@ -47,7 +47,7 @@ const returnToPersonal = async () => {
     </div>
 
     <div v-if="result" class="drixal-panel p-6 sm:p-8" role="status">
-      <div class="flex size-10 items-center justify-center bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]">
+      <div class="flex size-10 items-center justify-center rounded-lg bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]">
         <UIcon name="i-lucide-clock-3" class="size-5" />
       </div>
       <UBadge class="mt-5" :label="t('statuses.PENDING')" color="warning" variant="soft" />
@@ -60,7 +60,7 @@ const returnToPersonal = async () => {
     </div>
 
     <div v-else class="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
-      <form class="carbon-card grid gap-6 p-5 sm:p-6" @submit.prevent="register">
+      <form class="drixal-card grid gap-6 p-5 sm:p-6" @submit.prevent="register">
         <div>
           <h2 class="text-lg font-semibold">{{ t("companyRegistration.companySection") }}</h2>
           <p class="drixal-muted mt-1 text-sm">{{ t("companyRegistration.companySectionDescription") }}</p>
@@ -95,7 +95,7 @@ const returnToPersonal = async () => {
         <div class="panel-header"><h2 class="panel-title">{{ t("companyRegistration.nextTitle") }}</h2></div>
         <ol class="grid">
           <li v-for="(step, index) in [t('companyRegistration.nextReview'), t('companyRegistration.nextPrepare'), t('companyRegistration.nextPublish')]" :key="step" class="grid grid-cols-[2rem_1fr] gap-3 border-b border-[var(--drixal-line)] p-4 last:border-b-0">
-            <span class="grid size-7 place-items-center bg-[var(--drixal-soft-strong)] text-xs font-bold text-[var(--drixal-blue)]">{{ index + 1 }}</span>
+            <span class="grid size-7 place-items-center rounded-md bg-[var(--drixal-soft-strong)] text-xs font-bold text-[var(--drixal-blue)]">{{ index + 1 }}</span>
             <p class="text-sm leading-6">{{ step }}</p>
           </li>
         </ol>

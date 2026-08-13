@@ -118,7 +118,7 @@ const updateLineAssignment = async (line: ServiceOrderLine) => {
 
     <div v-else-if="order" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <main class="grid min-w-0 gap-4">
-        <div class="carbon-card rounded-xl p-5">
+        <div class="drixal-card p-5">
           <p class="mb-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--drixal-blue)]">{{ t("serviceOrders.detailsTitle") }}</p>
           <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
@@ -132,7 +132,7 @@ const updateLineAssignment = async (line: ServiceOrderLine) => {
           </div>
         </div>
 
-        <div class="carbon-card rounded-xl p-4">
+        <div class="drixal-card p-4">
           <div class="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <h2 class="text-lg font-semibold">{{ t("serviceOrders.serviceLines") }}</h2>
           </div>
