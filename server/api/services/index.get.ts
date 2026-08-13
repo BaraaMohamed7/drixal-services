@@ -1,10 +1,10 @@
-import { getDemoCompany } from "../../utils/services";
+import { getProviderCompany } from "../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const page = Math.max(Number(query.page) || 1, 1);
   const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 100);
-  const company = await getDemoCompany();
+  const company = await getProviderCompany("services.read");
   const filter: Record<string, unknown> = { companyId: company._id };
 
   if (typeof query.publicationStatus === "string") filter.publicationStatus = query.publicationStatus;

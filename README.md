@@ -30,6 +30,9 @@ Standalone-first service platform built with Nuxt 4, TypeScript, MongoDB, and Mo
 - Service request approve/reject/convert lifecycle.
 - Service order model, API, conversion flow, and provider UI.
 - Service order detail page with service lines.
+- Scheduling and assignment view for active service orders.
+- Inline service order line assignment updates.
+- Demo authentication foundation with user, membership, and session API.
 
 ## Demo Flow
 
@@ -45,12 +48,13 @@ Standalone-first service platform built with Nuxt 4, TypeScript, MongoDB, and Mo
 10. Approve the request and convert it into a service order.
 11. Open `/provider/orders` and confirm the order appears.
 12. Open a service order and add a service line.
-13. Open `/provider/customers` and confirm the customer appears.
-14. Unpublish the service and confirm it is hidden again.
+13. Update a line assignment and open `/provider/schedule` to review active work.
+14. Open `/api/session` and confirm the demo user, company, and membership are present.
+15. Open `/provider/customers` and confirm the customer appears.
+16. Unpublish the service and confirm it is hidden again.
 
 ## Planned
 
-- Authentication.
 - Company onboarding.
 - Company memberships / RBAC.
 - Customers.

@@ -124,12 +124,33 @@ const serviceOrderSchema = new mongoose.Schema(
   { collection: "service_orders", timestamps: true },
 );
 
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    status: { type: String, enum: ["ACTIVE", "INACTIVE"], default: "ACTIVE" },
+  },
+  { collection: "users", timestamps: true },
+);
+
+const membershipSchema = new mongoose.Schema(
+  {
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    role: { type: String, enum: ["OWNER", "ADMIN", "MANAGER", "TECHNICIAN", "VIEWER"], default: "MANAGER" },
+    status: { type: String, enum: ["ACTIVE", "INACTIVE"], default: "ACTIVE" },
+  },
+  { collection: "company_memberships", timestamps: true },
+);
+
 const Company = mongoose.model("Company", companySchema);
 const ServiceCategory = mongoose.model("ServiceCategory", categorySchema);
 const Service = mongoose.model("Service", serviceSchema);
 const Customer = mongoose.model("Customer", customerSchema);
 const ServiceRequest = mongoose.model("ServiceRequest", serviceRequestSchema);
 const ServiceOrder = mongoose.model("ServiceOrder", serviceOrderSchema);
+const User = mongoose.model("User", userSchema);
+const CompanyMembership = mongoose.model("CompanyMembership", membershipSchema);
 
 const companies = [
   {
@@ -173,6 +194,8 @@ try {
     ServiceRequest.collection.createIndex({ companyId: 1, status: 1, createdAt: -1 }),
     ServiceOrder.collection.createIndex({ companyId: 1, status: 1, createdAt: -1 }),
     ServiceOrder.collection.createIndex({ companyId: 1, orderNumber: 1 }, { unique: true }),
+    User.collection.createIndex({ email: 1 }, { unique: true }),
+    CompanyMembership.collection.createIndex({ companyId: 1, userId: 1 }, { unique: true }),
   ]);
 
   const companyDocs = new Map();
@@ -288,6 +311,18 @@ try {
   }
 
   const demoCompany = companyDocs.get("cool-air-services");
+  const demoUser = await User.findOneAndUpdate(
+    { email: "manager@coolair.example" },
+    { name: "Demo Manager", email: "manager@coolair.example", status: "ACTIVE" },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
+
+  await CompanyMembership.findOneAndUpdate(
+    { companyId: demoCompany._id, userId: demoUser._id },
+    { companyId: demoCompany._id, userId: demoUser._id, role: "MANAGER", status: "ACTIVE" },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
+
   const acMaintenance = await Service.findOne({ companyId: demoCompany._id, slug: "ac-maintenance" });
   const acInstallation = await Service.findOne({ companyId: demoCompany._id, slug: "ac-installation" });
   const customers = [
@@ -362,7 +397,7 @@ try {
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
 
-  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, ${services.length} services, ${customers.length} customers, and 2 service orders.`);
+  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, ${services.length} services, ${customers.length} customers, 2 service orders, and 1 demo user.`);
 } finally {
   await mongoose.disconnect();
 }

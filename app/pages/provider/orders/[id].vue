@@ -26,7 +26,9 @@ const route = useRoute();
 const { t } = useLocale();
 const { data: order, pending, error, refresh } = await useFetch<ServiceOrderDetail>(`/api/service-orders/${route.params.id}`);
 const linePending = ref(false);
+const assignmentPending = ref("");
 const lineError = ref("");
+const assignmentError = ref("");
 const lineForm = reactive({
   title: "",
   quantity: 1,
@@ -82,6 +84,23 @@ const addLine = async () => {
     linePending.value = false;
   }
 };
+
+const updateLineAssignment = async (line: ServiceOrderLine) => {
+  if (!line._id) return;
+  assignmentPending.value = line._id;
+  assignmentError.value = "";
+  try {
+    await $fetch(`/api/service-orders/${route.params.id}/lines/${line._id}`, {
+      method: "PATCH",
+      body: { assignedTo: line.assignedTo, status: line.status },
+    });
+    await refresh();
+  } catch (err) {
+    assignmentError.value = err instanceof Error ? err.message : t("serviceOrders.assignmentError");
+  } finally {
+    assignmentPending.value = "";
+  }
+};
 </script>
 
 <template>
@@ -123,15 +142,17 @@ const addLine = async () => {
                   <th>{{ t("common.assignedTo") }}</th>
                   <th>{{ t("common.status") }}</th>
                   <th>{{ t("common.cost") }}</th>
+                  <th>{{ t("common.actions") }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="line in order.lines" :key="line._id || line.title">
                   <td><div class="font-bold text-[var(--drixal-ink)]">{{ line.title }}</div></td>
                   <td>{{ line.quantity }}</td>
-                  <td>{{ line.assignedTo || '-' }}</td>
+                  <td><UInput v-model="line.assignedTo" size="sm" :placeholder="t('serviceOrders.assignedPlaceholder')" /></td>
                   <td><UBadge :label="t(`statuses.${line.status}`)" :color="lineStatusColor(line.status)" variant="soft" /></td>
                   <td>{{ formatCost(line) }}</td>
+                  <td><UButton :label="t('common.assign')" size="sm" color="neutral" variant="outline" :loading="assignmentPending === line._id" @click="updateLineAssignment(line)" /></td>
                 </tr>
               </tbody>
             </table>
@@ -145,6 +166,7 @@ const addLine = async () => {
             <UButton type="submit" :loading="linePending" :label="t('common.addLine')" />
           </form>
           <p v-if="lineError" class="drixal-danger mt-3 rounded-xl p-3 text-sm font-bold">{{ lineError }}</p>
+          <p v-if="assignmentError" class="drixal-danger mt-3 rounded-xl p-3 text-sm font-bold">{{ assignmentError }}</p>
         </div>
       </main>
 

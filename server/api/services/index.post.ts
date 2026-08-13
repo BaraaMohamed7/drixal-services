@@ -1,7 +1,7 @@
-import { duplicateKeyError, getDemoCompany, normalizeCreateServiceInput } from "../../utils/services";
+import { duplicateKeyError, getProviderCompany, normalizeCreateServiceInput } from "../../utils/services";
 
 export default defineEventHandler(async (event) => {
-  const company = await getDemoCompany();
+  const company = await getProviderCompany("services.manage");
   const body = await readBody(event);
   const input = normalizeCreateServiceInput(body || {});
 

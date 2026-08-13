@@ -9,6 +9,7 @@ import {
   type PublicationStatus,
 } from "../models/service.schema";
 import { isValidObjectId, toObjectId } from "./mongodb";
+import type { Permission } from "./permissions";
 
 export const demoCompanySlug = process.env.DEMO_COMPANY_SLUG || "cool-air-services";
 
@@ -61,6 +62,11 @@ export const getDemoCompany = async () => {
   return company;
 };
 
+export const getProviderCompany = async (permission: Permission) => {
+  const { getCurrentCompany } = await import("./session");
+  return getCurrentCompany(permission);
+};
+
 export const normalizeCreateServiceInput = (body: ServiceInput) => {
   const name = requiredString(body.name, "name");
   const slug = slugify(optionalString(body.slug) || name);
@@ -106,8 +112,8 @@ export const normalizeUpdateServiceInput = (body: ServiceInput) => {
   return update;
 };
 
-export const publishDemoCompanyService = async (id: string) => {
-  const company = await getDemoCompany();
+export const publishProviderService = async (id: string) => {
+  const company = await getProviderCompany("services.publish");
 
   if (company.status !== "APPROVED") {
     throw createError({ statusCode: 400, statusMessage: "Company must be APPROVED before publishing services" });
@@ -136,8 +142,8 @@ export const publishDemoCompanyService = async (id: string) => {
   return service;
 };
 
-export const unpublishDemoCompanyService = async (id: string) => {
-  const company = await getDemoCompany();
+export const unpublishProviderService = async (id: string) => {
+  const company = await getProviderCompany("services.publish");
   const service = await Service.findOneAndUpdate(
     { _id: id, companyId: company._id },
     { publicationStatus: "UNPUBLISHED" },

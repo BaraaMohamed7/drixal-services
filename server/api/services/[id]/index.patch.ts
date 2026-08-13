@@ -1,9 +1,9 @@
 import { getObjectIdOrThrow } from "../../../utils/mongodb";
-import { duplicateKeyError, getDemoCompany, normalizeUpdateServiceInput } from "../../../utils/services";
+import { duplicateKeyError, getProviderCompany, normalizeUpdateServiceInput } from "../../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  const company = await getDemoCompany();
+  const company = await getProviderCompany("services.manage");
   const body = await readBody(event);
   const update = normalizeUpdateServiceInput(body || {});
 

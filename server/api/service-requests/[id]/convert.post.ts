@@ -3,11 +3,11 @@ import "../../../models/service.schema";
 import { upsertCustomerFromRequest } from "../../../utils/customers";
 import { getObjectIdOrThrow } from "../../../utils/mongodb";
 import { normalizeCreateServiceOrderInput } from "../../../utils/service-orders";
-import { getDemoCompany } from "../../../utils/services";
+import { getProviderCompany } from "../../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  const company = await getDemoCompany();
+  const company = await getProviderCompany("requests.convert");
   const request = await ServiceRequest.findOne({ _id: id, companyId: company._id }).populate("serviceId");
 
   if (!request) throw createError({ statusCode: 404, statusMessage: "Service request not found" });

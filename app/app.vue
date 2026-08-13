@@ -3,6 +3,7 @@ import type { LocaleCode } from "~/utils/locales";
 
 const { locale, locales, setLocale, t } = useLocale();
 const colorMode = useColorMode();
+const { data: session } = await useFetch("/api/session");
 
 const localeOptions = computed(() =>
   locales.map((code) => ({
@@ -15,6 +16,7 @@ const navItems = computed(() => [
   { label: t("common.provider"), mark: "P", to: "/provider/services" },
   { label: t("common.requests"), mark: "R", to: "/provider/requests" },
   { label: t("common.orders"), mark: "O", to: "/provider/orders" },
+  { label: t("common.schedule"), mark: "S", to: "/provider/schedule" },
   { label: t("common.customers"), mark: "C", to: "/provider/customers" },
   { label: t("common.marketplace"), mark: "M", to: "/marketplace" },
 ]);
@@ -47,6 +49,10 @@ const themeOptions = computed(() => [
         </nav>
 
         <div class="mt-auto border-t border-[var(--drixal-line)] pt-4">
+          <div class="mb-3 rounded-lg bg-[var(--drixal-soft)] p-3 text-xs">
+            <p class="font-bold text-[var(--drixal-ink)]">{{ session?.user?.name || t("shell.demoSession") }}</p>
+            <p class="drixal-muted mt-1">{{ session?.company?.name || t("common.provider") }}</p>
+          </div>
           <UButton :label="locale === 'ar' ? 'خروج' : 'Logout'" color="neutral" variant="ghost" block />
         </div>
       </aside>

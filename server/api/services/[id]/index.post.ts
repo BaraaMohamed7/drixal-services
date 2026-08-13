@@ -1,5 +1,5 @@
 import { getObjectIdOrThrow } from "../../../utils/mongodb";
-import { publishDemoCompanyService, unpublishDemoCompanyService } from "../../../utils/services";
+import { publishProviderService, unpublishProviderService } from "../../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
@@ -9,5 +9,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "action must be publish or unpublish" });
   }
 
-  return body.action === "publish" ? publishDemoCompanyService(id) : unpublishDemoCompanyService(id);
+  return body.action === "publish" ? publishProviderService(id) : unpublishProviderService(id);
 });

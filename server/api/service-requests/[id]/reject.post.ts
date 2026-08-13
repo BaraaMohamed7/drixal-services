@@ -1,9 +1,9 @@
 import { getObjectIdOrThrow } from "../../../utils/mongodb";
-import { getDemoCompany } from "../../../utils/services";
+import { getProviderCompany } from "../../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  const company = await getDemoCompany();
+  const company = await getProviderCompany("requests.decide");
   const request = await ServiceRequest.findOneAndUpdate(
     { _id: id, companyId: company._id, status: { $ne: "CONVERTED" } },
     { status: "REJECTED" },

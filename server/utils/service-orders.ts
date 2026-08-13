@@ -24,6 +24,12 @@ type ServiceOrderLineInput = {
   };
 };
 
+type ServiceOrderUpdateInput = {
+  scheduledDate?: unknown;
+  assignedTo?: unknown;
+  status?: unknown;
+};
+
 const requiredString = (value: unknown, field: string) => {
   if (typeof value !== "string" || !value.trim()) {
     throw createError({ statusCode: 400, statusMessage: `${field} is required` });
@@ -116,4 +122,29 @@ export const normalizeCreateServiceOrderLineInput = (body: ServiceOrderLineInput
       currency: optionalString(body.cost?.currency).toUpperCase() || "EGP",
     },
   };
+};
+
+export const normalizeUpdateServiceOrderInput = (body: ServiceOrderUpdateInput) => {
+  const update: Record<string, unknown> = {};
+
+  if (body.scheduledDate !== undefined) update.scheduledDate = normalizeDate(body.scheduledDate);
+  if (body.assignedTo !== undefined) update.assignedTo = optionalString(body.assignedTo);
+  if (body.status !== undefined) update.status = normalizeStatus(body.status);
+
+  return update;
+};
+
+export const normalizeAssignServiceOrderLineInput = (body: ServiceOrderLineInput) => {
+  const update: Record<string, unknown> = {};
+
+  if (body.assignedTo !== undefined) update["lines.$.assignedTo"] = optionalString(body.assignedTo);
+  if (body.status !== undefined) {
+    const status = body.status === "" || body.status === undefined ? "PENDING" : body.status;
+    if (typeof status !== "string" || !serviceOrderLineStatusValues.includes(status as (typeof serviceOrderLineStatusValues)[number])) {
+      throw createError({ statusCode: 400, statusMessage: "line status is invalid" });
+    }
+    update["lines.$.status"] = status;
+  }
+
+  return update;
 };

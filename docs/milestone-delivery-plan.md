@@ -54,8 +54,8 @@ If a milestone is backend-heavy, the UI can be a minimal operational screen, but
 | 9. Request Lifecycle | Implemented |
 | 10. Service Orders | Implemented |
 | 11. Service Order Details and Lines | Implemented |
-| 12. Scheduling and Assignments | Planned |
-| 13. Authentication and Company Memberships | Planned |
+| 12. Scheduling and Assignments | Implemented |
+| 13. Authentication and Company Memberships | Implemented foundation |
 | 14. RBAC and Permissions | Planned |
 | 15. Company Onboarding and Approval | Planned |
 | 16. Operational Dashboard | Planned |
@@ -178,6 +178,7 @@ Milestones 8-10 extend the visible operations workflow after the customer reques
 - Add company membership model.
 - Replace demo-company-only behavior with authenticated company context where appropriate.
 - Preserve demo mode for local evaluation.
+- Add demo session API and shell account context.
 
 ### Milestone 14 Tasks
 
