@@ -12,6 +12,8 @@ type ScheduleOrder = {
 };
 
 const { t } = useLocale();
+const route = useRoute();
+const orderBase = computed(() => route.path.startsWith("/employee") ? "/employee/orders" : route.path.startsWith("/company-admin") ? "/company-admin/orders" : "/provider/orders");
 const { data, pending, error } = await useFetch<{ items: ScheduleOrder[] }>("/api/service-orders");
 const orders = computed(() => (data.value?.items || []).filter((order) => order.status !== "CANCELLED" && order.status !== "COMPLETED"));
 
@@ -53,7 +55,7 @@ const statusColor = (value: ScheduleOrder["status"]) => ({
           <tr v-for="order in orders" :key="order._id">
             <td>{{ order.scheduledDate ? new Date(order.scheduledDate).toLocaleDateString() : '-' }}</td>
             <td>
-              <NuxtLink :to="`/provider/orders/${order._id}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ order.orderNumber }}</NuxtLink>
+               <NuxtLink :to="`${orderBase}/${order._id}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ order.orderNumber }}</NuxtLink>
               <div class="drixal-muted mt-1 text-xs">{{ order.title }}</div>
             </td>
             <td>{{ order.customerId?.name || '-' }}</td>

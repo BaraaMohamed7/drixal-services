@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: "public" });
+
 type MarketplaceService = {
   id: string;
   name: string;
@@ -32,6 +34,8 @@ type MarketplaceService = {
 
 const route = useRoute();
 const { t } = useLocale();
+const auth = useAuth();
+await auth.load();
 const { data: service, pending, error } = await useFetch<MarketplaceService>(`/api/marketplace/services/${route.params.id}`);
 const requestPending = ref(false);
 const requestError = ref("");
@@ -56,6 +60,10 @@ const formatPrice = computed(() => {
 });
 
 const submitRequest = async () => {
+  if (!auth.session.value.authenticated) {
+    await navigateTo({ path: "/auth/login", query: { next: route.fullPath } });
+    return;
+  }
   requestPending.value = true;
   requestError.value = "";
 
@@ -124,7 +132,12 @@ const submitRequest = async () => {
           <p v-if="requestSent" class="drixal-success mb-4 rounded-xl p-3 text-sm font-bold">{{ t("requestForm.success") }}</p>
           <p v-if="requestError" class="drixal-danger mb-4 rounded-xl p-3 text-sm font-bold">{{ requestError }}</p>
 
-          <form class="grid gap-3" @submit.prevent="submitRequest">
+           <div v-if="!auth.session.value.authenticated" class="rounded-xl border border-[var(--drixal-line)] bg-[var(--drixal-soft)] p-4">
+             <p class="font-bold">{{ t("requestForm.authRequired") }}</p>
+             <p class="drixal-muted mt-1 text-sm">{{ t("requestForm.authRequiredDescription") }}</p>
+             <UButton class="mt-4" :to="{ path: '/auth/login', query: { next: route.fullPath } }" :label="t('auth.signIn')" />
+           </div>
+           <form v-else class="grid gap-3" @submit.prevent="submitRequest">
             <div class="grid gap-3 sm:grid-cols-2">
               <UInput v-model="requestForm.customer.name" required class="min-w-0" :placeholder="t('requestForm.namePlaceholder')" />
               <UInput v-model="requestForm.customer.phone" required class="min-w-0" :placeholder="t('requestForm.phonePlaceholder')" />

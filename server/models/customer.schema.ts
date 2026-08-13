@@ -11,6 +11,10 @@ export const Customer = defineMongooseModel({
       ref: "Company",
       required: true,
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     name: {
       type: String,
       required: true,
@@ -45,5 +49,7 @@ export const Customer = defineMongooseModel({
   hooks(schema) {
     schema.index({ companyId: 1, phone: 1 }, { unique: true });
     schema.index({ companyId: 1, name: 1 });
+    schema.index({ companyId: 1, userId: 1 }, { unique: true, partialFilterExpression: { userId: { $type: "objectId" } } });
+    schema.index({ userId: 1, updatedAt: -1 });
   },
 });

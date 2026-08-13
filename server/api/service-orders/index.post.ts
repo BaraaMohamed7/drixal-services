@@ -4,7 +4,7 @@ import { normalizeCreateServiceOrderInput } from "../../utils/service-orders";
 import { getProviderCompany } from "../../utils/services";
 
 export default defineEventHandler(async (event) => {
-  const company = await getProviderCompany("orders.manage");
+  const company = await getProviderCompany(event, "orders.manage");
   const body = await readBody(event);
   const input = await normalizeCreateServiceOrderInput(company._id, body || {});
   const order = await ServiceOrder.create({ companyId: company._id, ...input });

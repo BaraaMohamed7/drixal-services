@@ -8,9 +8,10 @@ type Category = {
 };
 
 const router = useRouter();
+const route = useRoute();
 const { t } = useLocale();
 const { hasPermission } = useProviderSession();
-await useFetch("/api/session", { key: "provider-session" });
+const serviceBase = computed(() => route.path.startsWith("/company-admin") ? "/company-admin/services" : "/provider/services");
 const pending = ref(false);
 const error = ref("");
 const { data: categoriesData } = await useFetch<{ items: Category[] }>("/api/categories");
@@ -26,7 +27,7 @@ const createService = async (value: unknown) => {
       method: "POST",
       body: value,
     });
-    await router.push("/provider/services");
+    await router.push(serviceBase.value);
   } catch (err) {
     error.value = err instanceof Error ? err.message : t("newService.error");
   } finally {
@@ -37,7 +38,7 @@ const createService = async (value: unknown) => {
 
 <template>
   <section class="mx-auto grid max-w-3xl gap-5 overflow-hidden px-4 py-5 sm:px-6">
-    <NuxtLink to="/provider/services" class="drixal-link-pill w-fit rounded-full px-4 py-2 text-sm font-black">
+    <NuxtLink :to="serviceBase" class="drixal-link-pill w-fit rounded-full px-4 py-2 text-sm font-black">
       {{ t("common.backToServices") }}
     </NuxtLink>
 

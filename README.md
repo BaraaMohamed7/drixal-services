@@ -32,48 +32,41 @@ Standalone-first service platform built with Nuxt 4, TypeScript, MongoDB, and Mo
 - Service order detail page with service lines.
 - Scheduling and assignment view for active service orders.
 - Inline service order line assignment updates.
-- Demo authentication foundation with user, membership, and session API.
+- Argon2id password authentication with database-backed HTTP-only cookie sessions.
 - Role-based permissions for provider APIs, navigation, and operational actions.
-- Public company registration with pending approval and owner membership creation.
+- Authenticated company registration with pending approval and owner membership creation.
 - Super-admin company approval, rejection, suspension, and reactivation workflow.
 - Provider company status screen with marketplace eligibility guidance.
+- Four separate protected workspaces for Super Admin, Company Admin, Company Employee, and Customer roles.
+- Customer-owned service requests and service orders with private tracking pages.
+- Same-origin mutation checks, explicit session DTOs, and tenant-reference validation.
 
 ## Demo Flow
 
-1. Open `/provider/services`.
-2. Create a service from `/provider/services/new`.
-3. Confirm the new service starts as `DRAFT`.
-4. Open `/marketplace` and verify the draft is hidden.
-5. Publish the service from provider UI.
-6. Search and filter it in `/marketplace`.
-7. Open the public service details page.
-8. Submit a request from the service details page.
-9. Open `/provider/requests` and confirm the request appears.
-10. Approve the request and convert it into a service order.
-11. Open `/provider/orders` and confirm the order appears.
-12. Open a service order and add a service line.
-13. Update a line assignment and open `/provider/schedule` to review active work.
-14. Open `/api/session` and confirm the demo user, company, and membership are present.
-15. Open `/provider/customers` and confirm the customer appears.
-16. Unpublish the service and confirm it is hidden again.
+Seeded accounts use `DrixalDemo123!` unless `DEMO_PASSWORD` is set before `npm run seed`.
 
-The default manager has full access. Set `DEMO_USER_EMAIL` to `viewer@coolair.example` for read-only provider access or `technician@coolair.example` for orders and schedule access only.
+| Workspace | Login | Route |
+| --- | --- | --- |
+| Super Admin | `admin@drixal.example` | `/super-admin` |
+| Company Admin | `manager@coolair.example` | `/company-admin` |
+| Company Employee | `technician@coolair.example` | `/employee` |
+| Customer | `customer@drixal.example` | `/customer` |
 
-For onboarding and approval:
-
-1. Open `/register/company` to submit a new provider application.
-2. Set `DEMO_USER_EMAIL=admin@drixal.example` and open `/admin/companies` to review companies.
-3. Set `DEMO_USER_EMAIL=owner@nilehome.example` and open `/provider/company` to view the seeded pending-company owner flow.
-4. Pending, rejected, and suspended companies cannot publish services or appear in public marketplace results.
+1. Sign in as the customer and submit a request from a service under `/marketplace`.
+2. Sign in as the company manager and review it under `/company-admin/requests`.
+3. Approve and convert the request, then manage it under `/company-admin/orders`.
+4. Sign in as the customer and confirm the request/order are visible only under `/customer`.
+5. Sign in as the technician and review operational work under `/employee/orders` and `/employee/schedule`.
+6. Sign in as the super admin and manage company approval under `/super-admin/companies`.
+7. Register a new account at `/auth/register`, then submit a provider application at `/register/company`.
+8. Pending, rejected, and suspended companies cannot publish services or appear in public marketplace results.
 
 ## Planned
 
-- Full authentication and logout.
 - Full booking lifecycle.
 - Service execution.
 - Payments.
 - Notifications.
-- Dashboards.
 - Reviews.
 - Company subscriptions.
 - External integrations.
@@ -100,6 +93,8 @@ Create `.env` with a MongoDB URI:
 
 ```env
 MONGODB_URI=mongodb://localhost:27017/service-engine
+# Optional local seed password override. Use a strong secret outside demo environments.
+DEMO_PASSWORD=DrixalDemo123!
 ```
 
 Seed demo data:

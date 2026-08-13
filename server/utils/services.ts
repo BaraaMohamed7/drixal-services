@@ -10,6 +10,7 @@ import {
 } from "../models/service.schema";
 import { isValidObjectId, toObjectId } from "./mongodb";
 import type { Permission } from "./permissions";
+import type { H3Event } from "h3";
 
 export const demoCompanySlug = process.env.DEMO_COMPANY_SLUG || "cool-air-services";
 
@@ -62,9 +63,9 @@ export const getDemoCompany = async () => {
   return company;
 };
 
-export const getProviderCompany = async (permission: Permission) => {
+export const getProviderCompany = async (event: H3Event, permission: Permission) => {
   const { getCurrentCompany } = await import("./session");
-  return getCurrentCompany(permission);
+  return getCurrentCompany(event, permission);
 };
 
 export const normalizeCreateServiceInput = (body: ServiceInput) => {
@@ -112,8 +113,8 @@ export const normalizeUpdateServiceInput = (body: ServiceInput) => {
   return update;
 };
 
-export const publishProviderService = async (id: string) => {
-  const company = await getProviderCompany("services.publish");
+export const publishProviderService = async (event: H3Event, id: string) => {
+  const company = await getProviderCompany(event, "services.publish");
 
   if (company.status !== "APPROVED") {
     throw createError({ statusCode: 400, statusMessage: "Company must be APPROVED before publishing services" });
@@ -142,8 +143,8 @@ export const publishProviderService = async (id: string) => {
   return service;
 };
 
-export const unpublishProviderService = async (id: string) => {
-  const company = await getProviderCompany("services.publish");
+export const unpublishProviderService = async (event: H3Event, id: string) => {
+  const company = await getProviderCompany(event, "services.publish");
   const service = await Service.findOneAndUpdate(
     { _id: id, companyId: company._id },
     { publicationStatus: "UNPUBLISHED" },

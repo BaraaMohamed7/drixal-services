@@ -3,7 +3,7 @@ import { getProviderCompany } from "../../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  const company = await getProviderCompany("requests.decide");
+  const company = await getProviderCompany(event, "requests.decide");
   const request = await ServiceRequest.findOneAndUpdate(
     { _id: id, companyId: company._id, status: { $ne: "CONVERTED" } },
     { status: "APPROVED" },

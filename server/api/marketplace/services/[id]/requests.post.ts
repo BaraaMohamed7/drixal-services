@@ -1,8 +1,10 @@
 import { isValidObjectId } from "../../../../utils/mongodb";
-import { upsertCustomerFromRequest } from "../../../../utils/customers";
+import { upsertCustomerForUser } from "../../../../utils/customers";
 import { normalizeCreateServiceRequestInput } from "../../../../utils/service-requests";
+import { requireUser } from "../../../../utils/auth";
 
 export default defineEventHandler(async (event) => {
+  const session = await requireUser(event);
   const id = getRouterParam(event, "id");
   const serviceFilter = isValidObjectId(id)
     ? { _id: id, publicationStatus: "PUBLISHED", operationalStatus: "ACTIVE" }
@@ -17,13 +19,15 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event);
   const input = normalizeCreateServiceRequestInput(body || {});
-  await upsertCustomerFromRequest(service.companyId, input.customer);
+  const customer = await upsertCustomerForUser(service.companyId, session.user._id, input.customer);
   const request = await ServiceRequest.create({
     ...input,
     companyId: service.companyId,
     serviceId: service._id,
+    customerId: customer._id,
+    requesterUserId: session.user._id,
   });
 
   setResponseStatus(event, 201);
-  return request.populate(["companyId", "serviceId"]);
+  return { id: String(request._id), status: request.status, createdAt: request.createdAt };
 });

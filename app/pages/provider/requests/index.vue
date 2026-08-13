@@ -21,7 +21,6 @@ const allOptionValue = "__all__";
 const status = ref(allOptionValue);
 const { t } = useLocale();
 const { hasPermission } = useProviderSession();
-await useFetch("/api/session", { key: "provider-session" });
 const query = computed(() => ({ status: status.value === allOptionValue ? undefined : status.value }));
 const { data, pending, error, refresh } = await useFetch<{ items: ProviderRequest[] }>("/api/service-requests", { query });
 const requests = computed(() => data.value?.items || []);

@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import argon2 from "argon2";
 import mongoose from "mongoose";
 
 if (existsSync(".env")) {
@@ -14,6 +15,7 @@ if (existsSync(".env")) {
 }
 
 const uri = process.env.NUXT_MONGOOSE_URI || process.env.MONGODB_URI;
+const demoPassword = process.env.DEMO_PASSWORD || "DrixalDemo123!";
 
 if (!uri) {
   throw new Error("MONGODB_URI or NUXT_MONGOOSE_URI is required to seed data.");
@@ -69,6 +71,7 @@ const serviceSchema = new mongoose.Schema(
 const customerSchema = new mongoose.Schema(
   {
     companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     name: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
     email: { type: String, default: "", trim: true, lowercase: true },
@@ -82,6 +85,8 @@ const serviceRequestSchema = new mongoose.Schema(
   {
     companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
     serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: true },
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
+    requesterUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     customer: {
       name: { type: String, required: true, trim: true },
       phone: { type: String, required: true, trim: true },
@@ -100,6 +105,7 @@ const serviceOrderSchema = new mongoose.Schema(
     companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
     requestId: { type: mongoose.Schema.Types.ObjectId, ref: "ServiceRequest" },
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: true },
+    customerUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: true },
     orderNumber: { type: String, required: true, trim: true, uppercase: true },
     title: { type: String, required: true, trim: true },
@@ -128,6 +134,7 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    passwordHash: { type: String, required: true },
     status: { type: String, enum: ["ACTIVE", "INACTIVE"], default: "ACTIVE" },
     platformRole: { type: String, enum: ["USER", "SUPER_ADMIN"], default: "USER" },
   },
@@ -144,6 +151,16 @@ const membershipSchema = new mongoose.Schema(
   { collection: "company_memberships", timestamps: true },
 );
 
+const authSessionSchema = new mongoose.Schema(
+  {
+    tokenHash: { type: String, required: true, unique: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    expiresAt: { type: Date, required: true },
+    lastSeenAt: { type: Date, required: true },
+  },
+  { collection: "auth_sessions", timestamps: true },
+);
+
 const Company = mongoose.model("Company", companySchema);
 const ServiceCategory = mongoose.model("ServiceCategory", categorySchema);
 const Service = mongoose.model("Service", serviceSchema);
@@ -152,6 +169,7 @@ const ServiceRequest = mongoose.model("ServiceRequest", serviceRequestSchema);
 const ServiceOrder = mongoose.model("ServiceOrder", serviceOrderSchema);
 const User = mongoose.model("User", userSchema);
 const CompanyMembership = mongoose.model("CompanyMembership", membershipSchema);
+const AuthSession = mongoose.model("AuthSession", authSessionSchema);
 
 const companies = [
   {
@@ -192,6 +210,14 @@ const categories = [
 await mongoose.connect(uri);
 
 try {
+  const demoPasswordHash = await argon2.hash(demoPassword, {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+    hashLength: 32,
+  });
+  await AuthSession.deleteMany({});
   await Promise.all([
     Service.collection.createIndex({ companyId: 1, publicationStatus: 1 }),
     Service.collection.createIndex({ categoryId: 1, publicationStatus: 1 }),
@@ -329,7 +355,7 @@ try {
   for (const demoUserInput of demoUsers) {
     const demoUser = await User.findOneAndUpdate(
       { email: demoUserInput.email },
-      { name: demoUserInput.name, email: demoUserInput.email, status: "ACTIVE", platformRole: demoUserInput.platformRole },
+      { name: demoUserInput.name, email: demoUserInput.email, passwordHash: demoPasswordHash, status: "ACTIVE", platformRole: demoUserInput.platformRole },
       { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
     );
 
@@ -342,14 +368,14 @@ try {
 
   await User.findOneAndUpdate(
     { email: "admin@drixal.example" },
-    { name: "Drixal Super Admin", email: "admin@drixal.example", status: "ACTIVE", platformRole: "SUPER_ADMIN" },
+    { name: "Drixal Super Admin", email: "admin@drixal.example", passwordHash: demoPasswordHash, status: "ACTIVE", platformRole: "SUPER_ADMIN" },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
 
   const pendingCompany = companyDocs.get("nile-home-care");
   const pendingOwner = await User.findOneAndUpdate(
     { email: "owner@nilehome.example" },
-    { name: "Nile Home Owner", email: "owner@nilehome.example", status: "ACTIVE", platformRole: "USER" },
+    { name: "Nile Home Owner", email: "owner@nilehome.example", passwordHash: demoPasswordHash, status: "ACTIVE", platformRole: "USER" },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
   await CompanyMembership.findOneAndUpdate(
@@ -360,8 +386,13 @@ try {
 
   const acMaintenance = await Service.findOne({ companyId: demoCompany._id, slug: "ac-maintenance" });
   const acInstallation = await Service.findOne({ companyId: demoCompany._id, slug: "ac-installation" });
+  const customerUser = await User.findOneAndUpdate(
+    { email: "customer@drixal.example" },
+    { name: "Demo Customer", email: "customer@drixal.example", passwordHash: demoPasswordHash, status: "ACTIVE", platformRole: "USER" },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
   const customers = [
-    { name: "ABC Motors", phone: "+201000000001", email: "ops@abcmotors.example", city: "Alexandria" },
+    { name: "Demo Customer", phone: "+201000000001", email: "customer@drixal.example", city: "Alexandria", userId: customerUser._id },
     { name: "Delta Co.", phone: "+201000000002", email: "facility@delta.example", city: "Alexandria" },
   ];
   const customerDocs = [];
@@ -380,6 +411,8 @@ try {
     {
       companyId: demoCompany._id,
       serviceId: acMaintenance._id,
+      customerId: customerDocs[0]._id,
+      requesterUserId: customerUser._id,
       customer: customers[0],
       message: "AC unit performance dropped and requires inspection before next week.",
       preferredDate: new Date("2026-08-14"),
@@ -394,6 +427,7 @@ try {
       companyId: demoCompany._id,
       requestId: request._id,
       customerId: customerDocs[0]._id,
+      customerUserId: customerUser._id,
       serviceId: acMaintenance._id,
       orderNumber: "SO-1001",
       title: "AC Maintenance",
@@ -432,7 +466,7 @@ try {
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
 
-  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, ${services.length} services, ${customers.length} customers, 2 service orders, and ${demoUsers.length + 2} demo users.`);
+  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, ${services.length} services, ${customers.length} customers, 2 service orders, and ${demoUsers.length + 3} demo users.`);
 } finally {
   await mongoose.disconnect();
 }

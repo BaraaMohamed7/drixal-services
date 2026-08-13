@@ -3,7 +3,7 @@ import { getObjectIdOrThrow } from "../../../utils/mongodb";
 import { requirePermission } from "../../../utils/session";
 
 export default defineEventHandler(async (event) => {
-  await requirePermission("companies.review");
+  await requirePermission(event, "companies.review");
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
   const body = await readBody<{ status?: unknown }>(event);
   const status = normalizeCompanyReviewStatus(body?.status);

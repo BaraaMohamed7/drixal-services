@@ -1,7 +1,9 @@
 <script setup lang="ts">
-const { providerHome } = useProviderSession();
-await useFetch("/api/session", { key: "provider-session" });
-await navigateTo(providerHome.value);
+definePageMeta({ layout: "public" });
+
+const auth = useAuth();
+await auth.load();
+await navigateTo(auth.session.value.authenticated ? auth.workspaceHome.value : "/marketplace");
 </script>
 
 <template>

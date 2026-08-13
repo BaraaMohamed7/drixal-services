@@ -5,7 +5,7 @@ import { getProviderCompany } from "../../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  const company = await getProviderCompany("orders.read");
+  const company = await getProviderCompany(event, "orders.read");
   const order = await ServiceOrder.findOne({ _id: id, companyId: company._id })
     .populate({ path: "customerId", model: Customer })
     .populate({ path: "serviceId", model: Service });

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: "public" });
+
 type Category = {
   _id: string;
   name: string;
@@ -38,8 +40,8 @@ type MarketplaceService = {
 const route = useRoute();
 const router = useRouter();
 const { t } = useLocale();
-const { hasPermission, providerHome } = useProviderSession();
-await useFetch("/api/session", { key: "provider-session" });
+const auth = useAuth();
+await auth.load();
 const allOptionValue = "__all__";
 
 const filters = reactive({
@@ -115,8 +117,8 @@ const resetFilters = () => {
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="drixal-muted text-sm font-bold">{{ t("marketplace.found", { count: total }) }}</p>
       <div class="flex flex-wrap gap-2">
-        <UButton to="/register/company" :label="t('marketplace.registerCompany')" size="sm" color="neutral" variant="outline" />
-        <UButton v-if="providerHome !== '/marketplace'" :to="providerHome" :label="t('marketplace.providerDemo')" size="sm" />
+        <UButton :to="auth.session.value.authenticated ? '/register/company' : { path: '/auth/register', query: { next: '/register/company' } }" :label="t('marketplace.registerCompany')" size="sm" color="neutral" variant="outline" />
+        <UButton v-if="auth.session.value.authenticated" :to="auth.workspaceHome.value" :label="t('shell.openWorkspace')" size="sm" />
       </div>
     </div>
 

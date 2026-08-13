@@ -1,7 +1,7 @@
 import { requirePermission } from "../../../utils/session";
 
 export default defineEventHandler(async (event) => {
-  await requirePermission("companies.review");
+  await requirePermission(event, "companies.review");
   const query = getQuery(event);
   const filter: Record<string, unknown> = {};
 

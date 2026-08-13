@@ -55,10 +55,10 @@ If a milestone is backend-heavy, the UI can be a minimal operational screen, but
 | 10. Service Orders | Implemented |
 | 11. Service Order Details and Lines | Implemented |
 | 12. Scheduling and Assignments | Implemented |
-| 13. Authentication and Company Memberships | Implemented foundation |
+| 13. Authentication and Company Memberships | Implemented |
 | 14. RBAC and Permissions | Implemented |
 | 15. Company Onboarding and Approval | Implemented |
-| 16. Operational Dashboard | Planned |
+| 16. Operational Dashboard | Implemented across four workspaces |
 | 17. Notifications | Planned |
 | 18. Payments and Invoices | Planned |
 | 19. Reviews and Quality Signals | Planned |
@@ -174,11 +174,11 @@ Milestones 8-10 extend the visible operations workflow after the customer reques
 
 ### Milestone 13 Tasks
 
-- Add authentication foundation.
+- Add Argon2id password authentication and database-backed HTTP-only sessions.
 - Add company membership model.
-- Replace demo-company-only behavior with authenticated company context where appropriate.
-- Preserve demo mode for local evaluation.
-- Add demo session API and shell account context.
+- Resolve company context from the authenticated user's active membership.
+- Add login, registration, logout, session DTO, and same-origin mutation protection.
+- Link customer requests and service orders to authenticated customer identities.
 
 ### Milestone 14 Tasks
 
@@ -196,9 +196,9 @@ Milestones 8-10 extend the visible operations workflow after the customer reques
 
 ### Milestone 16 Tasks
 
-- Add operational dashboard with attention-first KPIs.
-- Show open requests, active orders, overdue/scheduled work, and recent operational activity.
-- Keep dashboard compact and table-driven where possible.
+- Add separate Super Admin, Company Admin, Employee, and Customer dashboards.
+- Show role-relevant KPIs, queues, schedules, requests, and orders.
+- Keep dashboards compact, responsive, and table-driven where possible.
 
 ### Milestone 17 Tasks
 

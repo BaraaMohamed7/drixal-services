@@ -1,0 +1,9 @@
+<script setup lang="ts">
+definePageMeta({ layout: "workspace" });
+const { t } = useLocale();
+const { data } = await useFetch<{ items: Array<{ status: string; scheduledDate?: string; assignedTo?: string }> }>("/api/service-orders");
+const orders = computed(() => data.value?.items || []);
+const active = computed(() => orders.value.filter((item) => !["COMPLETED", "CANCELLED"].includes(item.status)));
+const scheduled = computed(() => active.value.filter((item) => item.scheduledDate));
+</script>
+<template><section class="grid gap-5 pb-8"><div><p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--drixal-blue)]">{{ t("dashboards.employee.eyebrow") }}</p><h1 class="mt-2 text-2xl font-semibold">{{ t("dashboards.employee.title") }}</h1><p class="drixal-muted mt-2 text-sm">{{ t("dashboards.employee.description") }}</p></div><div class="grid gap-3 sm:grid-cols-3"><div class="drixal-card rounded-xl p-5"><p class="drixal-muted text-xs font-bold">{{ t("dashboards.activeOrders") }}</p><p class="mt-3 text-3xl font-semibold">{{ active.length }}</p></div><div class="drixal-card rounded-xl p-5"><p class="drixal-muted text-xs font-bold">{{ t("common.schedule") }}</p><p class="mt-3 text-3xl font-semibold">{{ scheduled.length }}</p></div><div class="drixal-card rounded-xl p-5"><p class="drixal-muted text-xs font-bold">{{ t("statuses.IN_PROGRESS") }}</p><p class="mt-3 text-3xl font-semibold">{{ active.filter(item => item.status === 'IN_PROGRESS').length }}</p></div></div><div class="drixal-panel rounded-xl p-5"><h2 class="text-lg font-semibold">{{ t("dashboards.employeeFocus") }}</h2><p class="drixal-muted mt-2 text-sm">{{ t("dashboards.employeeFocusDescription") }}</p><div class="mt-4 flex gap-2"><UButton to="/employee/orders" :label="t('common.orders')" /><UButton to="/employee/schedule" :label="t('common.schedule')" color="neutral" variant="outline" /></div></div></section></template>

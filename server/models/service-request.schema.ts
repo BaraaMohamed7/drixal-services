@@ -16,6 +16,14 @@ export const ServiceRequest = defineMongooseModel({
       ref: "Service",
       required: true,
     },
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+    },
+    requesterUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     customer: {
       name: {
         type: String,
@@ -60,5 +68,6 @@ export const ServiceRequest = defineMongooseModel({
   hooks(schema) {
     schema.index({ companyId: 1, status: 1, createdAt: -1 });
     schema.index({ serviceId: 1, createdAt: -1 });
+    schema.index({ requesterUserId: 1, createdAt: -1 });
   },
 });

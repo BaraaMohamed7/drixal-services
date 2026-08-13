@@ -30,7 +30,7 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useLocale();
 const { hasPermission } = useProviderSession();
-await useFetch("/api/session", { key: "provider-session" });
+const serviceBase = computed(() => route.path.startsWith("/company-admin") ? "/company-admin/services" : "/provider/services");
 const pending = ref(false);
 const error = ref("");
 
@@ -62,7 +62,7 @@ const updateService = async (value: unknown) => {
       body: value,
     });
     await refresh();
-    await router.push("/provider/services");
+    await router.push(serviceBase.value);
   } catch (err) {
     error.value = err instanceof Error ? err.message : t("editService.error");
   } finally {
@@ -85,7 +85,7 @@ const unpublish = async () => {
 
 <template>
   <section class="mx-auto grid max-w-3xl gap-5 overflow-hidden px-4 py-5 sm:px-6">
-    <NuxtLink to="/provider/services" class="drixal-link-pill w-fit rounded-full px-4 py-2 text-sm font-black">
+    <NuxtLink :to="serviceBase" class="drixal-link-pill w-fit rounded-full px-4 py-2 text-sm font-black">
       {{ t("common.backToServices") }}
     </NuxtLink>
 

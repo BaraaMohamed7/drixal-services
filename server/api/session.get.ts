@@ -1,11 +1,6 @@
-export default defineEventHandler(async () => {
-  const session = await getCurrentSession();
+import { getAuthContext, toSessionDto } from "../utils/auth";
 
-  return {
-    demo: session.demo,
-    user: session.user,
-    company: session.company,
-    membership: session.membership,
-    permissions: session.permissions,
-  };
+export default defineEventHandler(async (event) => {
+  setResponseHeader(event, "cache-control", "no-store");
+  return toSessionDto(await getAuthContext(event));
 });

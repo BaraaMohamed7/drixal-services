@@ -3,5 +3,5 @@ import { publishProviderService } from "../../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  return publishProviderService(id);
+  return publishProviderService(event, id);
 });

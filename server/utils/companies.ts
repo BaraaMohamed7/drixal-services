@@ -9,10 +9,6 @@ type RegistrationInput = {
     city?: unknown;
     area?: unknown;
   };
-  owner?: {
-    name?: unknown;
-    email?: unknown;
-  };
 };
 
 const requiredText = (value: unknown, field: string, maxLength: number) => {
@@ -37,12 +33,8 @@ const optionalText = (value: unknown, field: string, maxLength: number) => {
 export const normalizeCompanyRegistrationInput = (body: RegistrationInput) => {
   const companyName = requiredText(body.company?.name, "company.name", 120);
   const slug = slugify(optionalText(body.company?.slug, "company.slug", 120) || companyName);
-  const ownerEmail = requiredText(body.owner?.email, "owner.email", 254).toLowerCase();
 
   if (!slug) throw createError({ statusCode: 400, statusMessage: "company.slug must contain letters or numbers" });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) {
-    throw createError({ statusCode: 400, statusMessage: "owner.email must be a valid email" });
-  }
 
   return {
     company: {
@@ -54,10 +46,6 @@ export const normalizeCompanyRegistrationInput = (body: RegistrationInput) => {
         area: optionalText(body.company?.area, "company.area", 120),
       },
       status: "PENDING" as CompanyStatus,
-    },
-    owner: {
-      name: requiredText(body.owner?.name, "owner.name", 120),
-      email: ownerEmail,
     },
   };
 };

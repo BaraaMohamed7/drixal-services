@@ -14,6 +14,7 @@ type ServiceOrderItem = {
 const route = useRoute();
 const router = useRouter();
 const { t } = useLocale();
+const orderBase = computed(() => route.path.startsWith("/employee") ? "/employee/orders" : route.path.startsWith("/company-admin") ? "/company-admin/orders" : "/provider/orders");
 const allOptionValue = "__all__";
 const search = ref(typeof route.query.search === "string" ? route.query.search : "");
 const status = ref(typeof route.query.status === "string" ? route.query.status : allOptionValue);
@@ -88,7 +89,7 @@ const priorityColor = (value: ServiceOrderItem["priority"]) => ({
         <tbody>
           <tr v-for="order in orders" :key="order._id">
             <td>
-              <NuxtLink :to="`/provider/orders/${order._id}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ order.orderNumber }}</NuxtLink>
+               <NuxtLink :to="`${orderBase}/${order._id}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ order.orderNumber }}</NuxtLink>
               <div class="drixal-muted mt-1 text-xs">{{ order.title }}</div>
             </td>
             <td>{{ order.customerId?.name || '-' }}</td>

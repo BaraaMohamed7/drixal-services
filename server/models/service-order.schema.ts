@@ -22,6 +22,10 @@ export const ServiceOrder = defineMongooseModel({
       ref: "Customer",
       required: true,
     },
+    customerUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     serviceId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Service",
@@ -106,5 +110,6 @@ export const ServiceOrder = defineMongooseModel({
     schema.index({ companyId: 1, status: 1, createdAt: -1 });
     schema.index({ companyId: 1, orderNumber: 1 }, { unique: true });
     schema.index({ requestId: 1 });
+    schema.index({ customerUserId: 1, createdAt: -1 });
   },
 });

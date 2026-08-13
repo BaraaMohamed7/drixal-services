@@ -1,4 +1,7 @@
 import { serviceOrderLineStatusValues, serviceOrderPriorityValues, serviceOrderStatusValues } from "../models/service-order.schema";
+import { Customer } from "../models/customer.schema";
+import { Service } from "../models/service.schema";
+import { ServiceRequest } from "../models/service-request.schema";
 import { isValidObjectId } from "./mongodb";
 
 type ServiceOrderInput = {
@@ -84,27 +87,42 @@ export const nextOrderNumber = async (companyId: unknown) => {
   return `SO-${String(count + 1001).padStart(4, "0")}`;
 };
 
-export const normalizeCreateServiceOrderInput = async (companyId: unknown, body: ServiceOrderInput) => ({
-  customerId: objectIdString(body.customerId, "customerId"),
-  serviceId: objectIdString(body.serviceId, "serviceId"),
-  requestId: optionalString(body.requestId) || undefined,
-  orderNumber: await nextOrderNumber(companyId),
-  title: requiredString(body.title, "title"),
-  description: optionalString(body.description),
-  priority: normalizePriority(body.priority),
-  status: normalizeStatus(body.status),
-  scheduledDate: normalizeDate(body.scheduledDate),
-  assignedTo: optionalString(body.assignedTo),
-  lines: [
-    {
-      title: requiredString(body.title, "title"),
-      quantity: 1,
-      assignedTo: optionalString(body.assignedTo),
-      status: "PENDING",
-      cost: { currency: "EGP" },
-    },
-  ],
-});
+export const normalizeCreateServiceOrderInput = async (companyId: unknown, body: ServiceOrderInput) => {
+  const customerId = objectIdString(body.customerId, "customerId");
+  const serviceId = objectIdString(body.serviceId, "serviceId");
+  const requestId = body.requestId ? objectIdString(body.requestId, "requestId") : undefined;
+  const [customer, service, request] = await Promise.all([
+    Customer.exists({ _id: customerId, companyId }),
+    Service.exists({ _id: serviceId, companyId }),
+    requestId ? ServiceRequest.exists({ _id: requestId, companyId }) : Promise.resolve(true),
+  ]);
+
+  if (!customer) throw createError({ statusCode: 400, statusMessage: "customerId does not belong to this company" });
+  if (!service) throw createError({ statusCode: 400, statusMessage: "serviceId does not belong to this company" });
+  if (!request) throw createError({ statusCode: 400, statusMessage: "requestId does not belong to this company" });
+
+  return {
+    customerId,
+    serviceId,
+    requestId,
+    orderNumber: await nextOrderNumber(companyId),
+    title: requiredString(body.title, "title"),
+    description: optionalString(body.description),
+    priority: normalizePriority(body.priority),
+    status: normalizeStatus(body.status),
+    scheduledDate: normalizeDate(body.scheduledDate),
+    assignedTo: optionalString(body.assignedTo),
+    lines: [
+      {
+        title: requiredString(body.title, "title"),
+        quantity: 1,
+        assignedTo: optionalString(body.assignedTo),
+        status: "PENDING",
+        cost: { currency: "EGP" },
+      },
+    ],
+  };
+};
 
 export const normalizeCreateServiceOrderLineInput = (body: ServiceOrderLineInput) => {
   const status = body.status === undefined || body.status === "" ? "PENDING" : body.status;

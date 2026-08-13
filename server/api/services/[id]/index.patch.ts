@@ -3,7 +3,7 @@ import { duplicateKeyError, getProviderCompany, normalizeUpdateServiceInput } fr
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  const company = await getProviderCompany("services.manage");
+  const company = await getProviderCompany(event, "services.manage");
   const body = await readBody(event);
   const update = normalizeUpdateServiceInput(body || {});
 

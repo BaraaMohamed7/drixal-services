@@ -7,14 +7,17 @@ import { getProviderCompany } from "../../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  const company = await getProviderCompany("requests.convert");
+  const company = await getProviderCompany(event, "requests.convert");
   const request = await ServiceRequest.findOne({ _id: id, companyId: company._id }).populate("serviceId");
 
   if (!request) throw createError({ statusCode: 404, statusMessage: "Service request not found" });
-  if (request.status === "CONVERTED") throw createError({ statusCode: 400, statusMessage: "Service request has already been converted" });
+  if (request.status !== "APPROVED") throw createError({ statusCode: 409, statusMessage: "Only approved service requests can be converted" });
 
   const service = request.serviceId as { _id?: unknown; name?: string } | undefined;
-  const customer = await upsertCustomerFromRequest(company._id, request.customer);
+  const customer = request.customerId
+    ? await Customer.findOne({ _id: request.customerId, companyId: company._id })
+    : await upsertCustomerFromRequest(company._id, request.customer);
+  if (!customer) throw createError({ statusCode: 404, statusMessage: "Customer not found" });
   const orderInput = await normalizeCreateServiceOrderInput(company._id, {
     customerId: String(customer._id),
     serviceId: String(service?._id || request.serviceId),
@@ -25,7 +28,7 @@ export default defineEventHandler(async (event) => {
     status: "SCHEDULED",
     scheduledDate: request.preferredDate ? new Date(request.preferredDate).toISOString() : undefined,
   });
-  const order = await ServiceOrder.create({ companyId: company._id, ...orderInput });
+  const order = await ServiceOrder.create({ companyId: company._id, customerUserId: request.requesterUserId, ...orderInput });
 
   request.status = "CONVERTED";
   await request.save();

@@ -25,7 +25,7 @@ type ServiceOrderDetail = {
 const route = useRoute();
 const { t } = useLocale();
 const { hasPermission } = useProviderSession();
-await useFetch("/api/session", { key: "provider-session" });
+const orderBase = computed(() => route.path.startsWith("/employee") ? "/employee/orders" : route.path.startsWith("/company-admin") ? "/company-admin/orders" : "/provider/orders");
 const { data: order, pending, error, refresh } = await useFetch<ServiceOrderDetail>(`/api/service-orders/${route.params.id}`);
 const linePending = ref(false);
 const assignmentPending = ref("");
@@ -109,7 +109,7 @@ const updateLineAssignment = async (line: ServiceOrderLine) => {
 
 <template>
   <section class="grid gap-4 overflow-hidden pb-8">
-    <NuxtLink to="/provider/orders" class="drixal-link-pill w-fit rounded-full px-4 py-2 text-sm font-black">
+    <NuxtLink :to="orderBase" class="drixal-link-pill w-fit rounded-full px-4 py-2 text-sm font-black">
       {{ t("common.orders") }}
     </NuxtLink>
 

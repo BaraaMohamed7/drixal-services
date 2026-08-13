@@ -2,7 +2,7 @@ import { normalizeCustomerInput } from "../../utils/customers";
 import { getProviderCompany } from "../../utils/services";
 
 export default defineEventHandler(async (event) => {
-  const company = await getProviderCompany("customers.manage");
+  const company = await getProviderCompany(event, "customers.manage");
   const body = await readBody(event);
   const input = normalizeCustomerInput(body || {});
   const customer = await Customer.findOneAndUpdate(

@@ -1,8 +1,10 @@
 <script setup lang="ts">
+definePageMeta({ layout: "workspace" });
+
 const { t } = useLocale();
 const pending = ref(false);
 const error = ref("");
-const result = ref<{ company: { name: string; slug: string; status: "PENDING" }; owner: { email: string } }>();
+const result = ref<{ company: { name: string; slug: string; status: "PENDING" } }>();
 const form = reactive({
   company: {
     name: "",
@@ -10,10 +12,6 @@ const form = reactive({
     description: "",
     city: "",
     area: "",
-  },
-  owner: {
-    name: "",
-    email: "",
   },
 });
 
@@ -46,8 +44,7 @@ const register = async () => {
       <UBadge :label="t('statuses.PENDING')" color="warning" variant="soft" />
       <h2 class="mt-4 text-xl font-semibold">{{ t("companyRegistration.successTitle") }}</h2>
       <p class="drixal-muted mt-2">{{ t("companyRegistration.successDescription", { company: result.company.name }) }}</p>
-      <p class="mt-4 text-sm font-semibold">{{ t("companyRegistration.demoHint", { email: result.owner.email }) }}</p>
-      <UButton to="/marketplace" class="mt-5" :label="t('common.marketplace')" />
+      <UButton to="/company-admin" class="mt-5" :label="t('shell.openWorkspace')" />
     </div>
 
     <form v-else class="carbon-card grid gap-5 rounded-xl p-5" @submit.prevent="register">
@@ -71,20 +68,6 @@ const register = async () => {
         </UFormField>
         <UFormField :label="t('common.description')" class="md:col-span-2">
           <UTextarea v-model="form.company.description" class="w-full" :rows="4" :placeholder="t('companyRegistration.descriptionPlaceholder')" />
-        </UFormField>
-      </div>
-
-      <div class="border-t border-[var(--drixal-line)] pt-5">
-        <h2 class="text-lg font-semibold">{{ t("companyRegistration.ownerSection") }}</h2>
-        <p class="drixal-muted mt-1 text-sm">{{ t("companyRegistration.ownerSectionDescription") }}</p>
-      </div>
-
-      <div class="grid gap-4 md:grid-cols-2">
-        <UFormField :label="t('companyRegistration.ownerName')" required>
-          <UInput v-model="form.owner.name" required class="w-full" :placeholder="t('companyRegistration.ownerNamePlaceholder')" />
-        </UFormField>
-        <UFormField :label="t('common.email')" required>
-          <UInput v-model="form.owner.email" required type="email" class="w-full" :placeholder="t('companyRegistration.ownerEmailPlaceholder')" />
         </UFormField>
       </div>
 

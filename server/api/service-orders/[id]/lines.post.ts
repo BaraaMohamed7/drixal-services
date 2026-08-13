@@ -6,7 +6,7 @@ import { getProviderCompany } from "../../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  const company = await getProviderCompany("orders.manage");
+  const company = await getProviderCompany(event, "orders.manage");
   const body = await readBody(event);
   const line = normalizeCreateServiceOrderLineInput(body || {});
   const order = await ServiceOrder.findOneAndUpdate(

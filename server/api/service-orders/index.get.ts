@@ -4,7 +4,7 @@ import { getProviderCompany } from "../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const company = await getProviderCompany("orders.read");
+  const company = await getProviderCompany(event, "orders.read");
   const filter: Record<string, unknown> = { companyId: company._id };
 
   if (typeof query.status === "string" && query.status) filter.status = query.status;

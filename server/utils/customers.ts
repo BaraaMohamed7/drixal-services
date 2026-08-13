@@ -32,3 +32,15 @@ export const upsertCustomerFromRequest = async (companyId: unknown, customer: Cu
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true, runValidators: true },
   );
 };
+
+export const upsertCustomerForUser = async (companyId: unknown, userId: unknown, customer: CustomerInput) => {
+  const input = normalizeCustomerInput(customer);
+  const existingPhone = await Customer.findOne({ companyId, phone: input.phone, userId: { $ne: userId } }).select("_id userId");
+  if (existingPhone) throw createError({ statusCode: 409, statusMessage: "This phone is already registered with the provider" });
+
+  return Customer.findOneAndUpdate(
+    { companyId, userId },
+    { companyId, userId, ...input },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true, runValidators: true },
+  );
+};

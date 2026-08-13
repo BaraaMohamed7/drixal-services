@@ -19,6 +19,11 @@ export const User = defineMongooseModel({
       trim: true,
       lowercase: true,
     },
+    passwordHash: {
+      type: String,
+      required: true,
+      select: false,
+    },
     status: {
       type: String,
       enum: userStatusValues,
