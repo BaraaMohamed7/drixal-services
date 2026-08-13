@@ -65,6 +65,10 @@ export const ServiceOrder = defineMongooseModel({
       default: "",
       trim: true,
     },
+    assignedUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     lines: [
       {
         title: {
@@ -109,7 +113,8 @@ export const ServiceOrder = defineMongooseModel({
   hooks(schema) {
     schema.index({ companyId: 1, status: 1, createdAt: -1 });
     schema.index({ companyId: 1, orderNumber: 1 }, { unique: true });
-    schema.index({ requestId: 1 });
+    schema.index({ companyId: 1, requestId: 1 }, { unique: true, partialFilterExpression: { requestId: { $type: "objectId" } } });
     schema.index({ customerUserId: 1, createdAt: -1 });
+    schema.index({ companyId: 1, assignedUserId: 1, status: 1 });
   },
 });

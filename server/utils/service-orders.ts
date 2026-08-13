@@ -92,19 +92,26 @@ export const normalizeCreateServiceOrderInput = async (companyId: unknown, body:
   const serviceId = objectIdString(body.serviceId, "serviceId");
   const requestId = body.requestId ? objectIdString(body.requestId, "requestId") : undefined;
   const [customer, service, request] = await Promise.all([
-    Customer.exists({ _id: customerId, companyId }),
+    Customer.findOne({ _id: customerId, companyId }).select("userId"),
     Service.exists({ _id: serviceId, companyId }),
-    requestId ? ServiceRequest.exists({ _id: requestId, companyId }) : Promise.resolve(true),
+    requestId ? ServiceRequest.findOne({ _id: requestId, companyId }).select("customerId serviceId") : Promise.resolve(null),
   ]);
 
   if (!customer) throw createError({ statusCode: 400, statusMessage: "customerId does not belong to this company" });
   if (!service) throw createError({ statusCode: 400, statusMessage: "serviceId does not belong to this company" });
-  if (!request) throw createError({ statusCode: 400, statusMessage: "requestId does not belong to this company" });
+  if (requestId && !request) throw createError({ statusCode: 400, statusMessage: "requestId does not belong to this company" });
+  if (request && String(request.serviceId) !== serviceId) {
+    throw createError({ statusCode: 400, statusMessage: "requestId does not reference the selected service" });
+  }
+  if (request?.customerId && String(request.customerId) !== customerId) {
+    throw createError({ statusCode: 400, statusMessage: "requestId does not reference the selected customer" });
+  }
 
   return {
     customerId,
     serviceId,
     requestId,
+    customerUserId: customer.userId,
     orderNumber: await nextOrderNumber(companyId),
     title: requiredString(body.title, "title"),
     description: optionalString(body.description),

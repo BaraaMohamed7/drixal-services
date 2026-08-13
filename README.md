@@ -95,6 +95,10 @@ Create `.env` with a MongoDB URI:
 MONGODB_URI=mongodb://localhost:27017/service-engine
 # Optional local seed password override. Use a strong secret outside demo environments.
 DEMO_PASSWORD=DrixalDemo123!
+# Production origin used for same-origin checks.
+APP_ORIGIN=https://services.example.com
+# Enable only behind a trusted proxy that sanitizes forwarding headers.
+TRUST_PROXY=false
 ```
 
 Seed demo data:
@@ -102,6 +106,16 @@ Seed demo data:
 ```bash
 npm run seed
 ```
+
+For an existing pre-authentication database, migrate account hashes and ownership links before deployment:
+
+```bash
+AUTH_MIGRATION_PASSWORDS='{"owner@example.com":"temporary-secret"}' \
+AUTH_MIGRATION_LINK_CUSTOMERS=true \
+npm run migrate:auth
+```
+
+The migration never invents passwords. It reports unresolved users and ambiguous memberships for operator review.
 
 ## Development Server
 

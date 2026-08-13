@@ -42,10 +42,5 @@ const login = async () => {
     </form>
 
     <p class="drixal-muted mt-6 text-center text-sm">{{ t("auth.noAccount") }} <NuxtLink to="/auth/register" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ t("auth.createAccount") }}</NuxtLink></p>
-    <div class="mt-6 border-t border-[var(--drixal-line)] pt-5 text-xs leading-5 text-[var(--drixal-muted)]">
-      <p class="font-bold text-[var(--drixal-ink)]">{{ t("auth.demoAccounts") }}</p>
-      <p class="mt-1">admin@drixal.example · manager@coolair.example · technician@coolair.example · customer@drixal.example</p>
-      <p>{{ t("auth.demoPassword") }}: DrixalDemo123!</p>
-    </div>
   </div>
 </template>

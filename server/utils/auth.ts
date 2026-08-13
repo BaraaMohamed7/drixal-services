@@ -3,6 +3,7 @@ import argon2 from "argon2";
 import type { H3Event } from "h3";
 import { deleteCookie, getCookie, getHeader, getMethod, getRequestURL, setCookie } from "h3";
 import { AuthSession } from "../models/auth-session.schema";
+import { Company } from "../models/company.schema";
 import { CompanyMembership } from "../models/company-membership.schema";
 import { User } from "../models/user.schema";
 import { getPermissionsForPlatformRole, getPermissionsForRole } from "./permissions";
@@ -32,9 +33,13 @@ export const assertSameOrigin = (event: H3Event) => {
   if (["GET", "HEAD", "OPTIONS"].includes(getMethod(event))) return;
 
   const origin = getHeader(event, "origin");
-  if (!origin) return;
+  if (!origin) throw createError({ statusCode: 403, statusMessage: "Origin header required" });
 
-  if (origin !== getRequestURL(event).origin) {
+  const forwardedHost = getHeader(event, "x-forwarded-host")?.split(",")[0]?.trim();
+  const forwardedProto = getHeader(event, "x-forwarded-proto")?.split(",")[0]?.trim();
+  const requestUrl = getRequestURL(event);
+  const expectedOrigin = process.env.APP_ORIGIN || (forwardedHost ? `${forwardedProto || requestUrl.protocol.replace(":", "") }://${forwardedHost}` : requestUrl.origin);
+  if (origin !== expectedOrigin) {
     throw createError({ statusCode: 403, statusMessage: "Cross-origin request rejected" });
   }
 };
@@ -75,7 +80,12 @@ export const getAuthContext = async (event: H3Event) => {
     return null;
   }
 
-  const memberships = await CompanyMembership.find({ userId: user._id, status: "ACTIVE" }).populate("companyId");
+  const memberships = await CompanyMembership.find({ userId: user._id, status: "ACTIVE" })
+    .sort({ createdAt: 1 })
+    .populate({ path: "companyId", model: Company });
+  if (memberships.length > 1) {
+    throw createError({ statusCode: 409, statusMessage: "Account has multiple active company memberships. Resolve membership context before continuing." });
+  }
   const membership = memberships[0] || null;
   const company = membership?.companyId && typeof membership.companyId === "object" && "_id" in membership.companyId ? membership.companyId : null;
   const permissions = [...new Set([...getPermissionsForRole(membership?.role), ...getPermissionsForPlatformRole(user.platformRole)])];

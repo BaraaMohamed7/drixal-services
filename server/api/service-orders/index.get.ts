@@ -1,11 +1,14 @@
 import { Customer } from "../../models/customer.schema";
 import { Service } from "../../models/service.schema";
-import { getProviderCompany } from "../../utils/services";
+import { requirePermission } from "../../utils/session";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const company = await getProviderCompany(event, "orders.read");
+  const session = await requirePermission(event, "orders.read");
+  const company = session.company;
+  if (!company) throw createError({ statusCode: 403, statusMessage: "Active company membership required" });
   const filter: Record<string, unknown> = { companyId: company._id };
+  if (session.membership?.role === "TECHNICIAN") filter.assignedUserId = session.user._id;
 
   if (typeof query.status === "string" && query.status) filter.status = query.status;
   if (typeof query.priority === "string" && query.priority) filter.priority = query.priority;

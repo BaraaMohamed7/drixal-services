@@ -28,7 +28,15 @@ export default defineEventHandler(async (event) => {
     status: "SCHEDULED",
     scheduledDate: request.preferredDate ? new Date(request.preferredDate).toISOString() : undefined,
   });
-  const order = await ServiceOrder.create({ companyId: company._id, customerUserId: request.requesterUserId, ...orderInput });
+  let order;
+  try {
+    order = await ServiceOrder.create({ ...orderInput, companyId: company._id, customerUserId: request.requesterUserId || orderInput.customerUserId });
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "code" in error && (error as { code?: number }).code === 11000) {
+      throw createError({ statusCode: 409, statusMessage: "Service request has already been converted" });
+    }
+    throw error;
+  }
 
   request.status = "CONVERTED";
   await request.save();

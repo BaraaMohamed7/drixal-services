@@ -35,6 +35,7 @@ export const CompanyMembership = defineMongooseModel({
   },
   hooks(schema) {
     schema.index({ companyId: 1, userId: 1 }, { unique: true });
+    schema.index({ userId: 1 }, { unique: true });
     schema.index({ userId: 1, status: 1 });
   },
 });

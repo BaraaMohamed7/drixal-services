@@ -8,9 +8,11 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "seed": "node scripts/seed.mjs",
+    "migrate:auth": "node scripts/migrate-auth.mjs",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@fontsource-variable/cairo": "^5.3.0",
     "@iconify-json/lucide": "^1.2.123",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/ui": "^4.10.0",

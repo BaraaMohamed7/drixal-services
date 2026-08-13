@@ -33,5 +33,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (to.path.startsWith("/super-admin") && session.user?.platformRole !== "SUPER_ADMIN") return navigateTo(auth.workspaceHome.value);
   if (to.path.startsWith("/company-admin") && !isCompanyAdmin) return navigateTo(auth.workspaceHome.value);
   if (to.path.startsWith("/employee") && !isEmployee) return navigateTo(auth.workspaceHome.value);
+  if (to.path.startsWith("/customer") && (session.user?.platformRole === "SUPER_ADMIN" || session.membership)) return navigateTo(auth.workspaceHome.value);
   if (to.path === "/register/company" && (session.membership || session.user?.platformRole === "SUPER_ADMIN")) return navigateTo(auth.workspaceHome.value);
 });

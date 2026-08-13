@@ -17,6 +17,10 @@ if (existsSync(".env")) {
 const uri = process.env.NUXT_MONGOOSE_URI || process.env.MONGODB_URI;
 const demoPassword = process.env.DEMO_PASSWORD || "DrixalDemo123!";
 
+if (process.env.NODE_ENV === "production" && (process.env.ALLOW_DEMO_SEED !== "true" || !process.env.DEMO_PASSWORD)) {
+  throw new Error("Production demo seeding requires ALLOW_DEMO_SEED=true and an explicit DEMO_PASSWORD in a disposable environment.");
+}
+
 if (!uri) {
   throw new Error("MONGODB_URI or NUXT_MONGOOSE_URI is required to seed data.");
 }
@@ -114,6 +118,7 @@ const serviceOrderSchema = new mongoose.Schema(
     status: { type: String, enum: ["DRAFT", "SCHEDULED", "ASSIGNED", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"], default: "DRAFT" },
     scheduledDate: { type: Date },
     assignedTo: { type: String, default: "", trim: true },
+    assignedUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     lines: [
       {
         title: { type: String, required: true, trim: true },
@@ -218,6 +223,17 @@ try {
     hashLength: 32,
   });
   await AuthSession.deleteMany({});
+  const duplicateRequestGroups = await ServiceOrder.aggregate([
+    { $match: { requestId: { $type: "objectId" } } },
+    { $sort: { createdAt: 1, _id: 1 } },
+    { $group: { _id: { companyId: "$companyId", requestId: "$requestId" }, orderIds: { $push: "$_id" }, count: { $sum: 1 } } },
+    { $match: { count: { $gt: 1 } } },
+  ]);
+
+  for (const group of duplicateRequestGroups) {
+    await ServiceOrder.updateMany({ _id: { $in: group.orderIds.slice(1) } }, { $unset: { requestId: "" } });
+  }
+
   await Promise.all([
     Service.collection.createIndex({ companyId: 1, publicationStatus: 1 }),
     Service.collection.createIndex({ categoryId: 1, publicationStatus: 1 }),
@@ -226,11 +242,17 @@ try {
     Service.collection.createIndex({ name: "text", description: "text" }),
     Customer.collection.createIndex({ companyId: 1, phone: 1 }, { unique: true }),
     Customer.collection.createIndex({ companyId: 1, name: 1 }),
+    Customer.collection.createIndex({ companyId: 1, userId: 1 }, { unique: true, partialFilterExpression: { userId: { $type: "objectId" } } }),
     ServiceRequest.collection.createIndex({ companyId: 1, status: 1, createdAt: -1 }),
     ServiceOrder.collection.createIndex({ companyId: 1, status: 1, createdAt: -1 }),
     ServiceOrder.collection.createIndex({ companyId: 1, orderNumber: 1 }, { unique: true }),
+    ServiceOrder.collection.createIndex({ companyId: 1, requestId: 1 }, { unique: true, partialFilterExpression: { requestId: { $type: "objectId" } } }),
+    ServiceOrder.collection.createIndex({ companyId: 1, assignedUserId: 1, status: 1 }),
     User.collection.createIndex({ email: 1 }, { unique: true }),
     CompanyMembership.collection.createIndex({ companyId: 1, userId: 1 }, { unique: true }),
+    CompanyMembership.collection.createIndex({ userId: 1 }, { unique: true }),
+    AuthSession.collection.createIndex({ tokenHash: 1 }, { unique: true }),
+    AuthSession.collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
   ]);
 
   const companyDocs = new Map();
@@ -351,6 +373,7 @@ try {
     { name: "Demo Technician", email: "technician@coolair.example", role: "TECHNICIAN", platformRole: "USER" },
     { name: "Demo Viewer", email: "viewer@coolair.example", role: "VIEWER", platformRole: "USER" },
   ];
+  const demoUserDocs = new Map();
 
   for (const demoUserInput of demoUsers) {
     const demoUser = await User.findOneAndUpdate(
@@ -358,6 +381,7 @@ try {
       { name: demoUserInput.name, email: demoUserInput.email, passwordHash: demoPasswordHash, status: "ACTIVE", platformRole: demoUserInput.platformRole },
       { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
     );
+    demoUserDocs.set(demoUserInput.email, demoUser);
 
     await CompanyMembership.findOneAndUpdate(
       { companyId: demoCompany._id, userId: demoUser._id },
@@ -436,6 +460,7 @@ try {
       status: "IN_PROGRESS",
       scheduledDate: new Date("2026-08-14"),
       assignedTo: "Ahmed Hassan",
+      assignedUserId: demoUserDocs.get("technician@coolair.example")._id,
       lines: [
         { title: "Diagnosis", quantity: 1, assignedTo: "Ahmed Hassan", status: "COMPLETED", cost: { currency: "EGP" } },
         { title: "Coil cleaning", quantity: 1, assignedTo: "Ahmed Hassan", status: "IN_PROGRESS", cost: { amount: 250, currency: "EGP" } },
