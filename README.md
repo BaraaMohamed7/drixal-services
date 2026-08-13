@@ -33,6 +33,10 @@ Standalone-first service platform built with Nuxt 4, TypeScript, MongoDB, and Mo
 - Scheduling and assignment view for active service orders.
 - Inline service order line assignment updates.
 - Demo authentication foundation with user, membership, and session API.
+- Role-based permissions for provider APIs, navigation, and operational actions.
+- Public company registration with pending approval and owner membership creation.
+- Super-admin company approval, rejection, suspension, and reactivation workflow.
+- Provider company status screen with marketplace eligibility guidance.
 
 ## Demo Flow
 
@@ -53,14 +57,19 @@ Standalone-first service platform built with Nuxt 4, TypeScript, MongoDB, and Mo
 15. Open `/provider/customers` and confirm the customer appears.
 16. Unpublish the service and confirm it is hidden again.
 
+The default manager has full access. Set `DEMO_USER_EMAIL` to `viewer@coolair.example` for read-only provider access or `technician@coolair.example` for orders and schedule access only.
+
+For onboarding and approval:
+
+1. Open `/register/company` to submit a new provider application.
+2. Set `DEMO_USER_EMAIL=admin@drixal.example` and open `/admin/companies` to review companies.
+3. Set `DEMO_USER_EMAIL=owner@nilehome.example` and open `/provider/company` to view the seeded pending-company owner flow.
+4. Pending, rejected, and suspended companies cannot publish services or appear in public marketplace results.
+
 ## Planned
 
-- Company onboarding.
-- Company memberships / RBAC.
-- Customers.
+- Full authentication and logout.
 - Full booking lifecycle.
-- Full booking lifecycle.
-- Scheduling.
 - Service execution.
 - Payments.
 - Notifications.

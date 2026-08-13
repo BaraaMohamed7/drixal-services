@@ -20,6 +20,8 @@ type ProviderRequest = {
 const allOptionValue = "__all__";
 const status = ref(allOptionValue);
 const { t } = useLocale();
+const { hasPermission } = useProviderSession();
+await useFetch("/api/session", { key: "provider-session" });
 const query = computed(() => ({ status: status.value === allOptionValue ? undefined : status.value }));
 const { data, pending, error, refresh } = await useFetch<{ items: ProviderRequest[] }>("/api/service-requests", { query });
 const requests = computed(() => data.value?.items || []);
@@ -46,6 +48,8 @@ const requestStatusSeverity = (value: ProviderRequest["status"]) => ({
 }[value]);
 
 const runAction = async (request: ProviderRequest, action: "approve" | "reject" | "convert") => {
+  const permission = action === "convert" ? "requests.convert" : "requests.decide";
+  if (!hasPermission(permission)) return;
   actionPending.value = `${request._id}:${action}`;
   try {
     await $fetch(`/api/service-requests/${request._id}/${action}`, { method: "POST" });
@@ -98,9 +102,10 @@ const runAction = async (request: ProviderRequest, action: "approve" | "reject" 
             <td>{{ request.preferredDate ? new Date(request.preferredDate).toLocaleDateString() : '-' }}</td>
             <td>
               <div class="flex flex-wrap gap-2">
-                <UButton v-if="!['APPROVED', 'REJECTED', 'CONVERTED', 'CANCELLED'].includes(request.status)" :label="t('common.approve')" size="sm" variant="soft" :loading="actionPending === `${request._id}:approve`" @click="runAction(request, 'approve')" />
-                <UButton v-if="!['REJECTED', 'CONVERTED', 'CANCELLED'].includes(request.status)" :label="t('common.reject')" size="sm" color="error" variant="soft" :loading="actionPending === `${request._id}:reject`" @click="runAction(request, 'reject')" />
-                <UButton v-if="request.status === 'APPROVED'" :label="t('common.convertToOrder')" size="sm" color="primary" :loading="actionPending === `${request._id}:convert`" @click="runAction(request, 'convert')" />
+                 <UButton v-if="hasPermission('requests.decide') && !['APPROVED', 'REJECTED', 'CONVERTED', 'CANCELLED'].includes(request.status)" :label="t('common.approve')" size="sm" variant="soft" :loading="actionPending === `${request._id}:approve`" @click="runAction(request, 'approve')" />
+                 <UButton v-if="hasPermission('requests.decide') && !['REJECTED', 'CONVERTED', 'CANCELLED'].includes(request.status)" :label="t('common.reject')" size="sm" color="error" variant="soft" :loading="actionPending === `${request._id}:reject`" @click="runAction(request, 'reject')" />
+                 <UButton v-if="hasPermission('requests.convert') && request.status === 'APPROVED'" :label="t('common.convertToOrder')" size="sm" color="primary" :loading="actionPending === `${request._id}:convert`" @click="runAction(request, 'convert')" />
+                 <span v-if="!hasPermission('requests.decide') && !hasPermission('requests.convert')" class="drixal-muted text-xs font-semibold">{{ t("permissions.readOnly") }}</span>
               </div>
             </td>
           </tr>

@@ -38,6 +38,8 @@ type MarketplaceService = {
 const route = useRoute();
 const router = useRouter();
 const { t } = useLocale();
+const { hasPermission, providerHome } = useProviderSession();
+await useFetch("/api/session", { key: "provider-session" });
 const allOptionValue = "__all__";
 
 const filters = reactive({
@@ -112,7 +114,10 @@ const resetFilters = () => {
 
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="drixal-muted text-sm font-bold">{{ t("marketplace.found", { count: total }) }}</p>
-      <UButton to="/provider/services" :label="t('marketplace.providerDemo')" size="sm" />
+      <div class="flex flex-wrap gap-2">
+        <UButton to="/register/company" :label="t('marketplace.registerCompany')" size="sm" color="neutral" variant="outline" />
+        <UButton v-if="providerHome !== '/marketplace'" :to="providerHome" :label="t('marketplace.providerDemo')" size="sm" />
+      </div>
     </div>
 
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>

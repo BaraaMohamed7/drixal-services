@@ -29,6 +29,8 @@ type ServiceDetail = {
 const route = useRoute();
 const router = useRouter();
 const { t } = useLocale();
+const { hasPermission } = useProviderSession();
+await useFetch("/api/session", { key: "provider-session" });
 const pending = ref(false);
 const error = ref("");
 
@@ -50,6 +52,7 @@ const initialValue = computed(() => {
 });
 
 const updateService = async (value: unknown) => {
+  if (!hasPermission("services.manage")) return;
   pending.value = true;
   error.value = "";
 
@@ -68,11 +71,13 @@ const updateService = async (value: unknown) => {
 };
 
 const publish = async () => {
+  if (!hasPermission("services.publish")) return;
   await $fetch(`/api/services/${route.params.id}/publish`, { method: "POST" });
   await refresh();
 };
 
 const unpublish = async () => {
+  if (!hasPermission("services.publish")) return;
   await $fetch(`/api/services/${route.params.id}/unpublish`, { method: "POST" });
   await refresh();
 };
@@ -91,7 +96,7 @@ const unpublish = async () => {
         <p class="drixal-muted mt-3">{{ t("common.status") }}: {{ service ? t(`statuses.${service.publicationStatus}`) : "" }}</p>
       </div>
 
-      <div v-if="service" class="flex flex-wrap gap-2">
+      <div v-if="service && hasPermission('services.publish')" class="flex flex-wrap gap-2">
         <UButton v-if="service.publicationStatus !== 'PUBLISHED'" :label="t('common.publish')" @click="publish" />
         <UButton v-else :label="t('common.unpublish')" color="neutral" variant="soft" @click="unpublish" />
       </div>

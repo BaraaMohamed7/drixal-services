@@ -24,6 +24,8 @@ type ServiceOrderDetail = {
 
 const route = useRoute();
 const { t } = useLocale();
+const { hasPermission } = useProviderSession();
+await useFetch("/api/session", { key: "provider-session" });
 const { data: order, pending, error, refresh } = await useFetch<ServiceOrderDetail>(`/api/service-orders/${route.params.id}`);
 const linePending = ref(false);
 const assignmentPending = ref("");
@@ -69,6 +71,7 @@ const formatCost = (line: ServiceOrderLine) => {
 };
 
 const addLine = async () => {
+  if (!hasPermission("orders.manage")) return;
   linePending.value = true;
   lineError.value = "";
   try {
@@ -86,6 +89,7 @@ const addLine = async () => {
 };
 
 const updateLineAssignment = async (line: ServiceOrderLine) => {
+  if (!hasPermission("orders.manage")) return;
   if (!line._id) return;
   assignmentPending.value = line._id;
   assignmentError.value = "";
@@ -149,16 +153,16 @@ const updateLineAssignment = async (line: ServiceOrderLine) => {
                 <tr v-for="line in order.lines" :key="line._id || line.title">
                   <td><div class="font-bold text-[var(--drixal-ink)]">{{ line.title }}</div></td>
                   <td>{{ line.quantity }}</td>
-                  <td><UInput v-model="line.assignedTo" size="sm" :placeholder="t('serviceOrders.assignedPlaceholder')" /></td>
+                   <td><UInput v-if="hasPermission('orders.manage')" v-model="line.assignedTo" size="sm" :placeholder="t('serviceOrders.assignedPlaceholder')" /><span v-else>{{ line.assignedTo || '-' }}</span></td>
                   <td><UBadge :label="t(`statuses.${line.status}`)" :color="lineStatusColor(line.status)" variant="soft" /></td>
                   <td>{{ formatCost(line) }}</td>
-                  <td><UButton :label="t('common.assign')" size="sm" color="neutral" variant="outline" :loading="assignmentPending === line._id" @click="updateLineAssignment(line)" /></td>
+                   <td><UButton v-if="hasPermission('orders.manage')" :label="t('common.assign')" size="sm" color="neutral" variant="outline" :loading="assignmentPending === line._id" @click="updateLineAssignment(line)" /><span v-else class="drixal-muted text-xs font-semibold">{{ t("permissions.readOnly") }}</span></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <form class="mt-4 grid gap-3 border-t border-[var(--drixal-line)] pt-4 md:grid-cols-[minmax(0,1.5fr)_120px_minmax(0,1fr)_120px_auto]" @submit.prevent="addLine">
+           <form v-if="hasPermission('orders.manage')" class="mt-4 grid gap-3 border-t border-[var(--drixal-line)] pt-4 md:grid-cols-[minmax(0,1.5fr)_120px_minmax(0,1fr)_120px_auto]" @submit.prevent="addLine">
             <UInput v-model="lineForm.title" required :placeholder="t('serviceOrders.lineTitlePlaceholder')" />
             <UInput v-model.number="lineForm.quantity" required type="number" min="1" :placeholder="t('common.quantity')" />
             <UInput v-model="lineForm.assignedTo" :placeholder="t('serviceOrders.assignedPlaceholder')" />

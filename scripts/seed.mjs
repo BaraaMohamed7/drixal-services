@@ -24,7 +24,7 @@ const companySchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     description: { type: String, default: "", trim: true },
-    status: { type: String, enum: ["PENDING", "APPROVED", "SUSPENDED"], default: "PENDING" },
+    status: { type: String, enum: ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"], default: "PENDING" },
     location: {
       city: { type: String, default: "", trim: true },
       area: { type: String, default: "", trim: true },
@@ -129,6 +129,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
     status: { type: String, enum: ["ACTIVE", "INACTIVE"], default: "ACTIVE" },
+    platformRole: { type: String, enum: ["USER", "SUPER_ADMIN"], default: "USER" },
   },
   { collection: "users", timestamps: true },
 );
@@ -168,6 +169,14 @@ const companies = [
     status: "APPROVED",
     location: { city: "Alexandria", area: "Smouha" },
     rating: 4.5,
+  },
+  {
+    name: "Nile Home Care",
+    slug: "nile-home-care",
+    description: "New home services provider awaiting platform review.",
+    status: "PENDING",
+    location: { city: "Cairo", area: "Nasr City" },
+    rating: 0,
   },
 ];
 
@@ -311,15 +320,41 @@ try {
   }
 
   const demoCompany = companyDocs.get("cool-air-services");
-  const demoUser = await User.findOneAndUpdate(
-    { email: "manager@coolair.example" },
-    { name: "Demo Manager", email: "manager@coolair.example", status: "ACTIVE" },
+  const demoUsers = [
+    { name: "Demo Manager", email: "manager@coolair.example", role: "MANAGER", platformRole: "USER" },
+    { name: "Demo Technician", email: "technician@coolair.example", role: "TECHNICIAN", platformRole: "USER" },
+    { name: "Demo Viewer", email: "viewer@coolair.example", role: "VIEWER", platformRole: "USER" },
+  ];
+
+  for (const demoUserInput of demoUsers) {
+    const demoUser = await User.findOneAndUpdate(
+      { email: demoUserInput.email },
+      { name: demoUserInput.name, email: demoUserInput.email, status: "ACTIVE", platformRole: demoUserInput.platformRole },
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+    );
+
+    await CompanyMembership.findOneAndUpdate(
+      { companyId: demoCompany._id, userId: demoUser._id },
+      { companyId: demoCompany._id, userId: demoUser._id, role: demoUserInput.role, status: "ACTIVE" },
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+    );
+  }
+
+  await User.findOneAndUpdate(
+    { email: "admin@drixal.example" },
+    { name: "Drixal Super Admin", email: "admin@drixal.example", status: "ACTIVE", platformRole: "SUPER_ADMIN" },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
 
+  const pendingCompany = companyDocs.get("nile-home-care");
+  const pendingOwner = await User.findOneAndUpdate(
+    { email: "owner@nilehome.example" },
+    { name: "Nile Home Owner", email: "owner@nilehome.example", status: "ACTIVE", platformRole: "USER" },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
   await CompanyMembership.findOneAndUpdate(
-    { companyId: demoCompany._id, userId: demoUser._id },
-    { companyId: demoCompany._id, userId: demoUser._id, role: "MANAGER", status: "ACTIVE" },
+    { companyId: pendingCompany._id, userId: pendingOwner._id },
+    { companyId: pendingCompany._id, userId: pendingOwner._id, role: "OWNER", status: "ACTIVE" },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
 
@@ -397,7 +432,7 @@ try {
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
 
-  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, ${services.length} services, ${customers.length} customers, 2 service orders, and 1 demo user.`);
+  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, ${services.length} services, ${customers.length} customers, 2 service orders, and ${demoUsers.length + 2} demo users.`);
 } finally {
   await mongoose.disconnect();
 }

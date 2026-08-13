@@ -1,5 +1,7 @@
 <script setup lang="ts">
-await navigateTo("/provider/services");
+const { providerHome } = useProviderSession();
+await useFetch("/api/session", { key: "provider-session" });
+await navigateTo(providerHome.value);
 </script>
 
 <template>

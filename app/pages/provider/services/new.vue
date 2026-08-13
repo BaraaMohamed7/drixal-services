@@ -9,12 +9,15 @@ type Category = {
 
 const router = useRouter();
 const { t } = useLocale();
+const { hasPermission } = useProviderSession();
+await useFetch("/api/session", { key: "provider-session" });
 const pending = ref(false);
 const error = ref("");
 const { data: categoriesData } = await useFetch<{ items: Category[] }>("/api/categories");
 const categories = computed(() => categoriesData.value?.items || []);
 
 const createService = async (value: unknown) => {
+  if (!hasPermission("services.manage")) return;
   pending.value = true;
   error.value = "";
 

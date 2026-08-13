@@ -1,6 +1,8 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
 
 export const userStatusValues = ["ACTIVE", "INACTIVE"] as const;
+export const userPlatformRoleValues = ["USER", "SUPER_ADMIN"] as const;
+export type UserPlatformRole = (typeof userPlatformRoleValues)[number];
 
 export const User = defineMongooseModel({
   name: "User",
@@ -21,6 +23,11 @@ export const User = defineMongooseModel({
       type: String,
       enum: userStatusValues,
       default: "ACTIVE",
+    },
+    platformRole: {
+      type: String,
+      enum: userPlatformRoleValues,
+      default: "USER",
     },
   },
   options: {

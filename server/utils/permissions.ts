@@ -1,6 +1,8 @@
 import type { CompanyMembershipRole } from "../models/company-membership.schema";
+import type { UserPlatformRole } from "../models/user.schema";
 
-export const permissionValues = [
+const companyPermissionValues = [
+  "company.read",
   "services.read",
   "services.manage",
   "services.publish",
@@ -13,19 +15,31 @@ export const permissionValues = [
   "orders.manage",
 ] as const;
 
+export const permissionValues = [...companyPermissionValues, "companies.review"] as const;
+
 export type Permission = (typeof permissionValues)[number];
 
-const allPermissions = [...permissionValues];
+const allCompanyPermissions = [...companyPermissionValues];
 
 export const rolePermissions: Record<CompanyMembershipRole, Permission[]> = {
-  OWNER: allPermissions,
-  ADMIN: allPermissions,
-  MANAGER: allPermissions,
-  TECHNICIAN: ["orders.read"],
-  VIEWER: ["services.read", "requests.read", "customers.read", "orders.read"],
+  OWNER: allCompanyPermissions,
+  ADMIN: allCompanyPermissions,
+  MANAGER: allCompanyPermissions,
+  TECHNICIAN: ["company.read", "orders.read"],
+  VIEWER: ["company.read", "services.read", "requests.read", "customers.read", "orders.read"],
+};
+
+export const platformRolePermissions: Record<UserPlatformRole, Permission[]> = {
+  USER: [],
+  SUPER_ADMIN: ["companies.review"],
 };
 
 export const getPermissionsForRole = (role: unknown): Permission[] => {
   if (typeof role !== "string" || !(role in rolePermissions)) return [];
   return rolePermissions[role as CompanyMembershipRole];
+};
+
+export const getPermissionsForPlatformRole = (role: unknown): Permission[] => {
+  if (typeof role !== "string" || !(role in platformRolePermissions)) return [];
+  return platformRolePermissions[role as UserPlatformRole];
 };

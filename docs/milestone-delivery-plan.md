@@ -56,8 +56,8 @@ If a milestone is backend-heavy, the UI can be a minimal operational screen, but
 | 11. Service Order Details and Lines | Implemented |
 | 12. Scheduling and Assignments | Implemented |
 | 13. Authentication and Company Memberships | Implemented foundation |
-| 14. RBAC and Permissions | Planned |
-| 15. Company Onboarding and Approval | Planned |
+| 14. RBAC and Permissions | Implemented |
+| 15. Company Onboarding and Approval | Implemented |
 | 16. Operational Dashboard | Planned |
 | 17. Notifications | Planned |
 | 18. Payments and Invoices | Planned |
@@ -182,14 +182,16 @@ Milestones 8-10 extend the visible operations workflow after the customer reques
 
 ### Milestone 14 Tasks
 
-- Add roles and permissions model.
-- Protect provider APIs with permission checks.
-- Hide or disable unavailable UI actions by permission.
+- Add roles and a centralized permissions model.
+- Protect provider APIs with active-membership and permission checks.
+- Hide unavailable navigation and actions by permission.
+- Preserve manager demo access and add viewer/technician demo identities for verification.
 
 ### Milestone 15 Tasks
 
-- Add company registration/onboarding flow.
-- Add company approval status management UI.
+- Add public company registration with pending status and owner membership creation.
+- Add provider company profile and approval-status UI.
+- Add super-admin company review, approval, rejection, suspension, and reactivation workflow.
 - Enforce approval rules across marketplace publishing and public discovery.
 
 ### Milestone 16 Tasks

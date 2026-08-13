@@ -3,7 +3,8 @@ import type { LocaleCode } from "~/utils/locales";
 
 const { locale, locales, setLocale, t } = useLocale();
 const colorMode = useColorMode();
-const { data: session } = await useFetch("/api/session");
+const { data: session, hasPermission, providerHome } = useProviderSession();
+await useFetch("/api/session", { key: "provider-session" });
 
 const localeOptions = computed(() =>
   locales.map((code) => ({
@@ -13,13 +14,15 @@ const localeOptions = computed(() =>
 );
 
 const navItems = computed(() => [
-  { label: t("common.provider"), mark: "P", to: "/provider/services" },
-  { label: t("common.requests"), mark: "R", to: "/provider/requests" },
-  { label: t("common.orders"), mark: "O", to: "/provider/orders" },
-  { label: t("common.schedule"), mark: "S", to: "/provider/schedule" },
-  { label: t("common.customers"), mark: "C", to: "/provider/customers" },
+  { label: t("common.company"), mark: "CO", to: "/provider/company", visible: hasPermission("company.read") },
+  { label: t("common.provider"), mark: "P", to: "/provider/services", visible: hasPermission("services.read") },
+  { label: t("common.requests"), mark: "R", to: "/provider/requests", visible: hasPermission("requests.read") },
+  { label: t("common.orders"), mark: "O", to: "/provider/orders", visible: hasPermission("orders.read") },
+  { label: t("common.schedule"), mark: "S", to: "/provider/schedule", visible: hasPermission("orders.read") },
+  { label: t("common.customers"), mark: "C", to: "/provider/customers", visible: hasPermission("customers.read") },
+  { label: t("common.companyReviews"), mark: "A", to: "/admin/companies", visible: hasPermission("companies.review") },
   { label: t("common.marketplace"), mark: "M", to: "/marketplace" },
-]);
+].filter((item) => item.visible !== false));
 
 const themeOptions = computed(() => [
   { label: t("common.light"), value: "light" },
@@ -33,7 +36,7 @@ const themeOptions = computed(() => [
     <NuxtRouteAnnouncer />
     <div class="mx-auto grid min-h-screen max-w-[1440px] gap-0 p-3 lg:grid-cols-[240px_1fr] lg:p-6">
       <aside class="drixal-card hidden rounded-xl p-4 lg:flex lg:flex-col">
-        <NuxtLink to="/provider/services" class="flex items-center gap-3 px-2 py-2">
+        <NuxtLink :to="providerHome" class="flex items-center gap-3 px-2 py-2">
           <span class="grid size-10 place-items-center rounded-lg bg-[var(--drixal-blue)] text-xs font-black text-[var(--ui-text-inverted)]">{{ t("shell.brandMark") }}</span>
           <span>
             <span class="block text-lg font-black text-[var(--drixal-blue)]">{{ t("common.appName") }}</span>
@@ -52,15 +55,17 @@ const themeOptions = computed(() => [
           <div class="mb-3 rounded-lg bg-[var(--drixal-soft)] p-3 text-xs">
             <p class="font-bold text-[var(--drixal-ink)]">{{ session?.user?.name || t("shell.demoSession") }}</p>
             <p class="drixal-muted mt-1">{{ session?.company?.name || t("common.provider") }}</p>
+            <p v-if="session?.membership?.role" class="mt-2 font-bold text-[var(--drixal-blue)]">{{ t(`roles.${session.membership.role}`) }}</p>
+            <p v-else-if="session?.user?.platformRole === 'SUPER_ADMIN'" class="mt-2 font-bold text-[var(--drixal-blue)]">{{ t("roles.SUPER_ADMIN") }}</p>
           </div>
-          <UButton :label="locale === 'ar' ? 'خروج' : 'Logout'" color="neutral" variant="ghost" block />
+          <UButton :label="t('common.logout')" color="neutral" variant="ghost" block />
         </div>
       </aside>
 
       <div class="min-w-0 lg:px-4">
         <header class="drixal-card sticky top-3 z-20 mb-4 rounded-xl px-4 py-3 lg:top-6">
           <div class="flex items-center justify-between gap-3">
-            <NuxtLink to="/provider/services" class="flex min-w-0 items-center gap-3 lg:hidden">
+            <NuxtLink :to="providerHome" class="flex min-w-0 items-center gap-3 lg:hidden">
               <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--drixal-blue)] text-xs font-black text-[var(--ui-text-inverted)]">{{ t("shell.brandMark") }}</span>
               <span class="truncate text-sm font-black text-[var(--drixal-blue)]">{{ t("common.appName") }}</span>
             </NuxtLink>
