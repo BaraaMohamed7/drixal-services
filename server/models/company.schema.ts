@@ -51,7 +51,6 @@ export const Company = defineMongooseModel({
     timestamps: true,
   },
   hooks(schema) {
-    schema.index({ slug: 1 }, { unique: true });
     schema.index({ status: 1 });
   },
 });

@@ -66,9 +66,58 @@ const serviceSchema = new mongoose.Schema(
   { collection: "services", timestamps: true },
 );
 
+const customerSchema = new mongoose.Schema(
+  {
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
+    name: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    email: { type: String, default: "", trim: true, lowercase: true },
+    city: { type: String, default: "", trim: true },
+    status: { type: String, enum: ["ACTIVE", "INACTIVE"], default: "ACTIVE" },
+  },
+  { collection: "customers", timestamps: true },
+);
+
+const serviceRequestSchema = new mongoose.Schema(
+  {
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
+    serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: true },
+    customer: {
+      name: { type: String, required: true, trim: true },
+      phone: { type: String, required: true, trim: true },
+      email: { type: String, default: "", trim: true, lowercase: true },
+      city: { type: String, default: "", trim: true },
+    },
+    message: { type: String, required: true, trim: true },
+    preferredDate: { type: Date },
+    status: { type: String, enum: ["NEW", "UNDER_REVIEW", "APPROVED", "REJECTED", "CONVERTED", "CANCELLED", "CONTACTED", "CLOSED"], default: "NEW" },
+  },
+  { collection: "service_requests", timestamps: true },
+);
+
+const serviceOrderSchema = new mongoose.Schema(
+  {
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
+    requestId: { type: mongoose.Schema.Types.ObjectId, ref: "ServiceRequest" },
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: true },
+    serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: true },
+    orderNumber: { type: String, required: true, trim: true, uppercase: true },
+    title: { type: String, required: true, trim: true },
+    description: { type: String, default: "", trim: true },
+    priority: { type: String, enum: ["LOW", "MEDIUM", "HIGH", "CRITICAL"], default: "MEDIUM" },
+    status: { type: String, enum: ["DRAFT", "SCHEDULED", "ASSIGNED", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"], default: "DRAFT" },
+    scheduledDate: { type: Date },
+    assignedTo: { type: String, default: "", trim: true },
+  },
+  { collection: "service_orders", timestamps: true },
+);
+
 const Company = mongoose.model("Company", companySchema);
 const ServiceCategory = mongoose.model("ServiceCategory", categorySchema);
 const Service = mongoose.model("Service", serviceSchema);
+const Customer = mongoose.model("Customer", customerSchema);
+const ServiceRequest = mongoose.model("ServiceRequest", serviceRequestSchema);
+const ServiceOrder = mongoose.model("ServiceOrder", serviceOrderSchema);
 
 const companies = [
   {
@@ -102,13 +151,16 @@ await mongoose.connect(uri);
 
 try {
   await Promise.all([
-    Company.collection.createIndex({ slug: 1 }, { unique: true }),
-    ServiceCategory.collection.createIndex({ slug: 1 }, { unique: true }),
     Service.collection.createIndex({ companyId: 1, publicationStatus: 1 }),
     Service.collection.createIndex({ categoryId: 1, publicationStatus: 1 }),
     Service.collection.createIndex({ slug: 1 }),
     Service.collection.createIndex({ companyId: 1, slug: 1 }, { unique: true }),
     Service.collection.createIndex({ name: "text", description: "text" }),
+    Customer.collection.createIndex({ companyId: 1, phone: 1 }, { unique: true }),
+    Customer.collection.createIndex({ companyId: 1, name: 1 }),
+    ServiceRequest.collection.createIndex({ companyId: 1, status: 1, createdAt: -1 }),
+    ServiceOrder.collection.createIndex({ companyId: 1, status: 1, createdAt: -1 }),
+    ServiceOrder.collection.createIndex({ companyId: 1, orderNumber: 1 }, { unique: true }),
   ]);
 
   const companyDocs = new Map();
@@ -223,7 +275,73 @@ try {
     );
   }
 
-  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, and ${services.length} services.`);
+  const demoCompany = companyDocs.get("cool-air-services");
+  const acMaintenance = await Service.findOne({ companyId: demoCompany._id, slug: "ac-maintenance" });
+  const acInstallation = await Service.findOne({ companyId: demoCompany._id, slug: "ac-installation" });
+  const customers = [
+    { name: "ABC Motors", phone: "+201000000001", email: "ops@abcmotors.example", city: "Alexandria" },
+    { name: "Delta Co.", phone: "+201000000002", email: "facility@delta.example", city: "Alexandria" },
+  ];
+  const customerDocs = [];
+
+  for (const customer of customers) {
+    const doc = await Customer.findOneAndUpdate(
+      { companyId: demoCompany._id, phone: customer.phone },
+      { companyId: demoCompany._id, ...customer, status: "ACTIVE" },
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+    );
+    customerDocs.push(doc);
+  }
+
+  const request = await ServiceRequest.findOneAndUpdate(
+    { companyId: demoCompany._id, serviceId: acMaintenance._id, "customer.phone": customers[0].phone },
+    {
+      companyId: demoCompany._id,
+      serviceId: acMaintenance._id,
+      customer: customers[0],
+      message: "AC unit performance dropped and requires inspection before next week.",
+      preferredDate: new Date("2026-08-14"),
+      status: "APPROVED",
+    },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
+
+  await ServiceOrder.findOneAndUpdate(
+    { companyId: demoCompany._id, orderNumber: "SO-1001" },
+    {
+      companyId: demoCompany._id,
+      requestId: request._id,
+      customerId: customerDocs[0]._id,
+      serviceId: acMaintenance._id,
+      orderNumber: "SO-1001",
+      title: "AC Maintenance",
+      description: "Inspect and clean AC unit for ABC Motors.",
+      priority: "HIGH",
+      status: "IN_PROGRESS",
+      scheduledDate: new Date("2026-08-14"),
+      assignedTo: "Ahmed Hassan",
+    },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
+
+  await ServiceOrder.findOneAndUpdate(
+    { companyId: demoCompany._id, orderNumber: "SO-1002" },
+    {
+      companyId: demoCompany._id,
+      customerId: customerDocs[1]._id,
+      serviceId: acInstallation._id,
+      orderNumber: "SO-1002",
+      title: "AC Installation",
+      description: "Install new split AC unit for Delta Co.",
+      priority: "MEDIUM",
+      status: "SCHEDULED",
+      scheduledDate: new Date("2026-08-15"),
+      assignedTo: "Omar Ali",
+    },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
+
+  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, ${services.length} services, ${customers.length} customers, and 2 service orders.`);
 } finally {
   await mongoose.disconnect();
 }

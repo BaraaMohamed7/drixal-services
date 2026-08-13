@@ -1,4 +1,5 @@
 import { isValidObjectId } from "../../../utils/mongodb";
+import { mapMarketplaceService } from "../../../utils/marketplace";
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, "id");
@@ -13,5 +14,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: "Service not found" });
   }
 
-  return service;
+  return mapMarketplaceService(service);
 });

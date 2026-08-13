@@ -1,4 +1,5 @@
 import { isValidObjectId } from "../../utils/mongodb";
+import { mapMarketplaceService } from "../../utils/marketplace";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -53,7 +54,7 @@ export default defineEventHandler(async (event) => {
   ]);
 
   return {
-    items,
+    items: items.map(mapMarketplaceService),
     pagination: {
       page,
       limit,

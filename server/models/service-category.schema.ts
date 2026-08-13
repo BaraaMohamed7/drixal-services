@@ -25,7 +25,6 @@ export const ServiceCategory = defineMongooseModel({
     timestamps: true,
   },
   hooks(schema) {
-    schema.index({ slug: 1 }, { unique: true });
     schema.index({ isActive: 1, name: 1 });
   },
 });
