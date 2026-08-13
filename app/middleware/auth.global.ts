@@ -30,9 +30,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const legacy = legacyDestination(to.path, isCompanyAdmin);
   if (legacy) return navigateTo({ path: legacy, query: to.query }, { redirectCode: 302 });
 
-  if (to.path.startsWith("/super-admin") && session.user?.platformRole !== "SUPER_ADMIN") return navigateTo(auth.workspaceHome.value);
+  if (to.path.startsWith("/super-admin") && (session.user?.platformRole !== "SUPER_ADMIN" || session.activeWorkspace?.type !== "PLATFORM")) return navigateTo(auth.workspaceHome.value);
   if (to.path.startsWith("/company-admin") && !isCompanyAdmin) return navigateTo(auth.workspaceHome.value);
   if (to.path.startsWith("/employee") && !isEmployee) return navigateTo(auth.workspaceHome.value);
-  if (to.path.startsWith("/customer") && (session.user?.platformRole === "SUPER_ADMIN" || session.membership)) return navigateTo(auth.workspaceHome.value);
-  if (to.path === "/register/company" && (session.membership || session.user?.platformRole === "SUPER_ADMIN")) return navigateTo(auth.workspaceHome.value);
+  if (to.path.startsWith("/customer") && session.activeWorkspace?.type !== "PERSONAL") return navigateTo(auth.workspaceHome.value);
+  if (to.path === "/register/company" && session.user?.platformRole === "SUPER_ADMIN") return navigateTo(auth.workspaceHome.value);
 });

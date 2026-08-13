@@ -4,6 +4,10 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   modules: ["@nuxt/eslint", "@nuxt/ui", "nuxt-mongoose"],
+  colorMode: {
+    preference: "light",
+    fallback: "light",
+  },
   mongoose: {
     uri: process.env.NUXT_MONGOOSE_URI || process.env.MONGODB_URI || "",
     modelsDir: "models",

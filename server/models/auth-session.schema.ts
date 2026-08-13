@@ -15,6 +15,15 @@ export const AuthSession = defineMongooseModel({
       ref: "User",
       required: true,
     },
+    activeWorkspaceType: {
+      type: String,
+      enum: ["PERSONAL", "COMPANY", "PLATFORM"],
+      default: "PERSONAL",
+    },
+    activeCompanyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+    },
     expiresAt: {
       type: Date,
       required: true,

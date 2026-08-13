@@ -1,7 +1,11 @@
 <script setup lang="ts">
 const { t } = useLocale();
 const auth = useAuth();
+const route = useRoute();
 await auth.load();
+const navClass = (path: string) => route.path === path
+  ? "border-[var(--color-brand)] text-[var(--drixal-ink)]"
+  : "border-transparent text-[var(--drixal-muted)] hover:bg-[var(--drixal-hover)] hover:text-[var(--drixal-ink)]";
 </script>
 
 <template>
@@ -12,8 +16,8 @@ await auth.load();
           <DrixalBrand />
         </NuxtLink>
         <nav class="hidden h-full items-center md:flex" :aria-label="t('common.marketplace')">
-          <NuxtLink to="/marketplace" class="flex h-full items-center border-b-2 border-[var(--color-brand)] px-4 text-sm font-bold">{{ t("common.marketplace") }}</NuxtLink>
-          <NuxtLink :to="auth.session.value.authenticated ? '/register/company' : { path: '/auth/register', query: { next: '/register/company' } }" class="flex h-full items-center border-b-2 border-transparent px-4 text-sm font-semibold text-[var(--drixal-muted)] hover:bg-[var(--drixal-hover)] hover:text-[var(--drixal-ink)]">{{ t("marketplace.registerCompany") }}</NuxtLink>
+          <NuxtLink to="/marketplace" class="flex h-full items-center border-b-2 px-4 text-sm font-semibold" :class="navClass('/marketplace')">{{ t("common.marketplace") }}</NuxtLink>
+          <NuxtLink v-if="auth.session.value.user?.platformRole !== 'SUPER_ADMIN'" :to="auth.session.value.authenticated ? '/register/company' : { path: '/auth/register', query: { next: '/register/company' } }" class="flex h-full items-center border-b-2 px-4 text-sm font-semibold" :class="navClass('/register/company')">{{ t("marketplace.registerCompany") }}</NuxtLink>
         </nav>
         <div class="flex items-center gap-2">
           <AppPreferences class="hidden sm:flex" />

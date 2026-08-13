@@ -7,6 +7,8 @@ const { t } = useLocale();
 const pending = ref(false);
 const error = ref("");
 const form = reactive({ name: "", email: "", password: "", confirmation: "" });
+const nextPath = computed(() => typeof route.query.next === "string" && route.query.next.startsWith("/") && !route.query.next.startsWith("//") ? route.query.next : "");
+const loginLink = computed(() => ({ path: "/auth/login", query: nextPath.value ? { next: nextPath.value } : {} }));
 
 const register = async () => {
   error.value = "";
@@ -19,7 +21,7 @@ const register = async () => {
   try {
     await $fetch("/api/auth/register", { method: "POST", body: { name: form.name, email: form.email, password: form.password } });
     await auth.load(true);
-    const next = typeof route.query.next === "string" && route.query.next.startsWith("/") ? route.query.next : "/customer";
+    const next = nextPath.value || "/customer";
     await navigateTo(next);
   } catch (err) {
     error.value = err instanceof Error ? err.message : t("auth.registerError");
@@ -41,6 +43,6 @@ const register = async () => {
       <p v-if="error" class="drixal-danger p-3 text-sm font-semibold">{{ error }}</p>
       <UButton type="submit" block size="lg" :loading="pending" :label="t('auth.createAccount')" />
     </form>
-    <p class="drixal-muted mt-6 text-center text-sm">{{ t("auth.haveAccount") }} <NuxtLink to="/auth/login" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ t("auth.signIn") }}</NuxtLink></p>
+    <p class="drixal-muted mt-6 text-center text-sm">{{ t("auth.haveAccount") }} <NuxtLink :to="loginLink" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ t("auth.signIn") }}</NuxtLink></p>
   </div>
 </template>

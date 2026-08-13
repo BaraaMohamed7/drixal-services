@@ -534,6 +534,10 @@ a.metric-tile:hover {
 }
 
 @media (max-width: 639px) {
+  .workspace-brand .brand-wordmark {
+    display: none;
+  }
+
   .page-header {
     min-height: 0;
     align-items: flex-start;
@@ -542,11 +546,23 @@ a.metric-tile:hover {
   }
 
   .metric-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .metric-tile {
-    min-height: 7.5rem;
+    min-height: 6.75rem;
+    padding: 1rem;
+  }
+
+  .metric-value {
+    margin-block-start: 0.75rem;
+    font-size: 2rem;
+  }
+
+  .metric-action {
+    position: static;
+    display: block;
+    margin-block-start: 0.75rem;
   }
 
   .panel-header,

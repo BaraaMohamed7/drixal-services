@@ -12,7 +12,7 @@ if (existsSync(".env")) {
 const uri = process.env.NUXT_MONGOOSE_URI || process.env.MONGODB_URI;
 if (!uri) throw new Error("MONGODB_URI or NUXT_MONGOOSE_URI is required.");
 
-let passwordMap = {};
+let passwordMap;
 try {
   passwordMap = JSON.parse(process.env.AUTH_MIGRATION_PASSWORDS || "{}");
 } catch {
@@ -52,9 +52,6 @@ try {
     passwordsBackfilled += 1;
   }
 
-  const duplicateMemberships = await memberships
-    .aggregate([{ $match: { status: "ACTIVE" } }, { $group: { _id: "$userId", count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }])
-    .toArray();
   const duplicateOrders = await orders
     .aggregate([
       { $match: { requestId: { $type: "objectId" } } },
@@ -86,12 +83,13 @@ try {
     }
   }
 
-  if (duplicateMemberships.length) {
-    console.error(`Found ${duplicateMemberships.length} users with multiple active memberships. Resolve them before creating the single-company index.`);
-    process.exitCode = 1;
-  } else {
-    await memberships.createIndex({ userId: 1 }, { unique: true });
+  const membershipIndexes = await memberships.indexes();
+  for (const index of membershipIndexes) {
+    const keys = Object.keys(index.key || {});
+    if (keys.length === 1 && keys[0] === "userId") await memberships.dropIndex(index.name);
   }
+  await memberships.createIndex({ companyId: 1, userId: 1 }, { unique: true });
+  await memberships.createIndex({ userId: 1, status: 1 });
 
   if (duplicateOrders.length) {
     console.error("Found duplicate orders linked to the same request. Resolve these groups before creating the unique request index:");

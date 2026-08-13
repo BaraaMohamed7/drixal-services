@@ -2,7 +2,6 @@ import {
   locationTypeValues,
   operationalStatusValues,
   pricingTypeValues,
-  publicationStatusValues,
   type LocationType,
   type OperationalStatus,
   type PricingType,
@@ -233,16 +232,6 @@ const normalizeOperationalStatus = (status: unknown): OperationalStatus | undefi
   }
 
   return status as OperationalStatus;
-};
-
-const normalizePublicationStatus = (status: unknown): PublicationStatus | undefined => {
-  if (status === undefined) return undefined;
-
-  if (typeof status !== "string" || !publicationStatusValues.includes(status as PublicationStatus)) {
-    throw createError({ statusCode: 400, statusMessage: "publicationStatus must be DRAFT, PUBLISHED, or UNPUBLISHED" });
-  }
-
-  return status as PublicationStatus;
 };
 
 export const duplicateKeyError = (error: unknown) =>

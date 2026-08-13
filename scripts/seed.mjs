@@ -160,6 +160,8 @@ const authSessionSchema = new mongoose.Schema(
   {
     tokenHash: { type: String, required: true, unique: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    activeWorkspaceType: { type: String, enum: ["PERSONAL", "COMPANY", "PLATFORM"], default: "PERSONAL" },
+    activeCompanyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     expiresAt: { type: Date, required: true },
     lastSeenAt: { type: Date, required: true },
   },
@@ -234,6 +236,13 @@ try {
     await ServiceOrder.updateMany({ _id: { $in: group.orderIds.slice(1) } }, { $unset: { requestId: "" } });
   }
 
+  const membershipCollectionExists = await mongoose.connection.db.listCollections({ name: "company_memberships" }).hasNext();
+  const membershipIndexes = membershipCollectionExists ? await CompanyMembership.collection.indexes() : [];
+  for (const index of membershipIndexes) {
+    const keys = Object.keys(index.key || {});
+    if (keys.length === 1 && keys[0] === "userId") await CompanyMembership.collection.dropIndex(index.name);
+  }
+
   await Promise.all([
     Service.collection.createIndex({ companyId: 1, publicationStatus: 1 }),
     Service.collection.createIndex({ categoryId: 1, publicationStatus: 1 }),
@@ -250,7 +259,7 @@ try {
     ServiceOrder.collection.createIndex({ companyId: 1, assignedUserId: 1, status: 1 }),
     User.collection.createIndex({ email: 1 }, { unique: true }),
     CompanyMembership.collection.createIndex({ companyId: 1, userId: 1 }, { unique: true }),
-    CompanyMembership.collection.createIndex({ userId: 1 }, { unique: true }),
+    CompanyMembership.collection.createIndex({ userId: 1, status: 1 }),
     AuthSession.collection.createIndex({ tokenHash: 1 }, { unique: true }),
     AuthSession.collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
   ]);
@@ -389,6 +398,14 @@ try {
       { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
     );
   }
+
+  const secondDemoCompany = companyDocs.get("techfix");
+  const demoManager = demoUserDocs.get("manager@coolair.example");
+  await CompanyMembership.findOneAndUpdate(
+    { companyId: secondDemoCompany._id, userId: demoManager._id },
+    { companyId: secondDemoCompany._id, userId: demoManager._id, role: "OWNER", status: "ACTIVE" },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
 
   await User.findOneAndUpdate(
     { email: "admin@drixal.example" },

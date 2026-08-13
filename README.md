@@ -48,16 +48,16 @@ Seeded accounts use `DrixalDemo123!` unless `DEMO_PASSWORD` is set before `npm r
 | Workspace | Login | Route |
 | --- | --- | --- |
 | Super Admin | `admin@drixal.example` | `/super-admin` |
-| Company Admin | `manager@coolair.example` | `/company-admin` |
-| Company Employee | `technician@coolair.example` | `/employee` |
+| Company Admin | `manager@coolair.example` | Select `Cool Air Services`, then `/company-admin` |
+| Company Employee | `technician@coolair.example` | Select `Cool Air Services`, then `/employee` |
 | Customer | `customer@drixal.example` | `/customer` |
 
 1. Sign in as the customer and submit a request from a service under `/marketplace`.
-2. Sign in as the company manager and review it under `/company-admin/requests`.
+2. Sign in as the company manager, select `Cool Air Services`, and review it under `/company-admin/requests`.
 3. Approve and convert the request, then manage it under `/company-admin/orders`.
 4. Sign in as the customer and confirm the request/order are visible only under `/customer`.
-5. Sign in as the technician and review operational work under `/employee/orders` and `/employee/schedule`.
-6. Sign in as the super admin and manage company approval under `/super-admin/companies`.
+5. Sign in as the technician, select `Cool Air Services`, and review operational work under `/employee/orders` and `/employee/schedule`.
+6. Sign in as the super admin, select Platform Administration, and manage company approval under `/super-admin/companies`.
 7. Register a new account at `/auth/register`, then submit a provider application at `/register/company`.
 8. Pending, rejected, and suspended companies cannot publish services or appear in public marketplace results.
 
@@ -115,7 +115,13 @@ AUTH_MIGRATION_LINK_CUSTOMERS=true \
 npm run migrate:auth
 ```
 
-The migration never invents passwords. It reports unresolved users and ambiguous memberships for operator review.
+The migration never invents passwords. It reports unresolved users and leaves ambiguous customer links unchanged for operator review.
+
+Enable multiple company memberships and Personal/company workspace selection on an existing database:
+
+```bash
+npm run migrate:workspaces
+```
 
 ## Development Server
 

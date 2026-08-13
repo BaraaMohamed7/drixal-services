@@ -83,12 +83,18 @@ export const getAuthContext = async (event: H3Event) => {
   const memberships = await CompanyMembership.find({ userId: user._id, status: "ACTIVE" })
     .sort({ createdAt: 1 })
     .populate({ path: "companyId", model: Company });
-  if (memberships.length > 1) {
-    throw createError({ statusCode: 409, statusMessage: "Account has multiple active company memberships. Resolve membership context before continuing." });
-  }
-  const membership = memberships[0] || null;
+  const membership = authSession.activeWorkspaceType === "COMPANY" && authSession.activeCompanyId
+    ? memberships.find((item) => String(item.companyId?._id || item.companyId) === String(authSession.activeCompanyId)) || null
+    : null;
   const company = membership?.companyId && typeof membership.companyId === "object" && "_id" in membership.companyId ? membership.companyId : null;
-  const permissions = [...new Set([...getPermissionsForRole(membership?.role), ...getPermissionsForPlatformRole(user.platformRole)])];
+  const platformPermissions = authSession.activeWorkspaceType === "PLATFORM" ? getPermissionsForPlatformRole(user.platformRole) : [];
+  const permissions = [...new Set([...getPermissionsForRole(membership?.role), ...platformPermissions])];
+
+  if ((authSession.activeWorkspaceType === "COMPANY" || authSession.activeCompanyId) && !membership) {
+    authSession.activeWorkspaceType = "PERSONAL";
+    authSession.activeCompanyId = undefined;
+    await authSession.save();
+  }
 
   if (Date.now() - new Date(authSession.lastSeenAt).getTime() > 60 * 60 * 1000) {
     await AuthSession.updateOne({ _id: authSession._id }, { lastSeenAt: new Date() });
@@ -105,7 +111,7 @@ export const requireUser = async (event: H3Event) => {
 };
 
 export const toSessionDto = (context: Awaited<ReturnType<typeof getAuthContext>>) => {
-  if (!context) return { authenticated: false, user: null, company: null, membership: null, memberships: [], permissions: [] };
+  if (!context) return { authenticated: false, user: null, activeWorkspace: null, company: null, membership: null, memberships: [], permissions: [] };
 
   return {
     authenticated: true,
@@ -115,6 +121,9 @@ export const toSessionDto = (context: Awaited<ReturnType<typeof getAuthContext>>
       email: context.user.email,
       platformRole: context.user.platformRole,
     },
+    activeWorkspace: context.company
+      ? { type: "COMPANY" as const, companyId: String(context.company._id) }
+      : { type: context.authSession.activeWorkspaceType === "PLATFORM" ? "PLATFORM" as const : "PERSONAL" as const },
     company: context.company
       ? {
           id: String(context.company._id),

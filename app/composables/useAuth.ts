@@ -13,16 +13,25 @@ export type AppPermission =
   | "companies.review";
 
 export type CompanyRole = "OWNER" | "ADMIN" | "MANAGER" | "TECHNICIAN" | "VIEWER";
+export type WorkspaceSelection = { type: "PERSONAL" } | { type: "PLATFORM" } | { type: "COMPANY"; companyId: string };
+
+type CompanySummary = {
+  id: string;
+  name: string;
+  slug: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+};
 
 export type AuthSession = {
   authenticated: boolean;
   user: { id: string; name: string; email: string; platformRole: "USER" | "SUPER_ADMIN" } | null;
-  company: { id: string; name: string; slug: string; status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED" } | null;
+  activeWorkspace: WorkspaceSelection | null;
+  company: CompanySummary | null;
   membership: { id: string; role: CompanyRole; status: "ACTIVE" | "INACTIVE" } | null;
   memberships: Array<{
     id: string;
     role: CompanyRole;
-    company: { id: string; name: string; slug: string; status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED" } | null;
+    company: CompanySummary | null;
   }>;
   permissions: AppPermission[];
 };
@@ -30,6 +39,7 @@ export type AuthSession = {
 const emptySession = (): AuthSession => ({
   authenticated: false,
   user: null,
+  activeWorkspace: null,
   company: null,
   membership: null,
   memberships: [],
@@ -58,11 +68,19 @@ export const useAuth = () => {
   const isEmployee = computed(() => ["TECHNICIAN", "VIEWER"].includes(session.value.membership?.role || ""));
   const workspaceHome = computed(() => {
     if (!session.value.authenticated) return "/auth/login";
-    if (session.value.user?.platformRole === "SUPER_ADMIN") return "/super-admin";
-    if (isCompanyAdmin.value) return "/company-admin";
-    if (isEmployee.value) return "/employee";
+    if (session.value.activeWorkspace?.type === "PLATFORM") return "/super-admin";
+    if (session.value.activeWorkspace?.type === "COMPANY") {
+      if (isCompanyAdmin.value) return "/company-admin";
+      if (isEmployee.value) return "/employee";
+    }
     return "/customer";
   });
+
+  const switchWorkspace = async (selection: WorkspaceSelection) => {
+    session.value = await requestFetch<AuthSession>("/api/auth/workspace", { method: "POST", body: selection });
+    loaded.value = true;
+    return session.value;
+  };
 
   const logout = async () => {
     await requestFetch("/api/auth/logout", { method: "POST" });
@@ -70,5 +88,5 @@ export const useAuth = () => {
     await navigateTo("/auth/login");
   };
 
-  return { session, loaded, load, clear, hasPermission, isCompanyAdmin, isEmployee, workspaceHome, logout };
+  return { session, loaded, load, clear, hasPermission, isCompanyAdmin, isEmployee, workspaceHome, switchWorkspace, logout };
 };

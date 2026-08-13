@@ -9,6 +9,7 @@
     "preview": "nuxt preview",
     "seed": "node scripts/seed.mjs",
     "migrate:auth": "node scripts/migrate-auth.mjs",
+    "migrate:workspaces": "node scripts/migrate-workspaces.mjs",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
