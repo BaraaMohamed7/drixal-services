@@ -1,3 +1,4 @@
+import { defineMongooseModel } from "#nuxt/mongoose";
 import mongoose, { type InferSchemaType } from "mongoose";
 
 export const pricingTypeValues = ["FIXED", "HOURLY", "CUSTOM"] as const;

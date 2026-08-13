@@ -1,6 +1,43 @@
-# Nuxt Minimal Starter
+# Drixal Service Platform
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Standalone-first service platform built with Nuxt 4, TypeScript, MongoDB, and Mongoose.
+
+## Implemented
+
+- MongoDB/Mongoose setup.
+- Company model.
+- Service category model.
+- Service catalog model.
+- Seed data for demo companies, categories, and services.
+- Provider service listing.
+- Service creation.
+- Service editing.
+- Service detail retrieval.
+- Service publication lifecycle.
+- Publish/unpublish endpoints.
+- Public marketplace API foundation.
+- Public service details API foundation.
+
+## Planned
+
+- Provider services UI.
+- Marketplace UI.
+- Marketplace URL state.
+- Authentication.
+- Company onboarding.
+- Company memberships / RBAC.
+- Customers.
+- Booking.
+- Service requests.
+- Service orders.
+- Scheduling.
+- Service execution.
+- Payments.
+- Notifications.
+- Dashboards.
+- Reviews.
+- Company subscriptions.
+- External integrations.
 
 ## Setup
 
@@ -18,6 +55,18 @@ yarn install
 
 # bun
 bun install
+```
+
+Create `.env` with a MongoDB URI:
+
+```env
+MONGODB_URI=mongodb://localhost:27017/service-engine
+```
+
+Seed demo data:
+
+```bash
+npm run seed
 ```
 
 ## Development Server

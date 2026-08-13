@@ -1,3 +1,5 @@
+import { defineMongooseModel } from "#nuxt/mongoose";
+
 export const companyStatusValues = ["PENDING", "APPROVED", "SUSPENDED"] as const;
 
 export const Company = defineMongooseModel({

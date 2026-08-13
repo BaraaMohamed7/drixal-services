@@ -86,6 +86,13 @@ export const normalizeCreateServiceInput = (body: ServiceInput) => {
 export const normalizeUpdateServiceInput = (body: ServiceInput) => {
   const update: Record<string, unknown> = {};
 
+  if (body.publicationStatus !== undefined) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Use the publish/unpublish endpoints to change publicationStatus",
+    });
+  }
+
   if (body.categoryId !== undefined) update.categoryId = normalizeObjectId(body.categoryId, "categoryId");
   if (body.name !== undefined) update.name = requiredString(body.name, "name");
   if (body.slug !== undefined) update.slug = slugify(requiredString(body.slug, "slug"));
@@ -95,9 +102,55 @@ export const normalizeUpdateServiceInput = (body: ServiceInput) => {
   if (body.locationType !== undefined) update.locationType = normalizeLocationType(body.locationType);
   if (body.scheduling !== undefined) update.scheduling = { required: Boolean(body.scheduling.required) };
   if (body.operationalStatus !== undefined) update.operationalStatus = normalizeOperationalStatus(body.operationalStatus);
-  if (body.publicationStatus !== undefined) update.publicationStatus = normalizePublicationStatus(body.publicationStatus);
 
   return update;
+};
+
+export const publishDemoCompanyService = async (id: string) => {
+  const company = await getDemoCompany();
+
+  if (company.status !== "APPROVED") {
+    throw createError({ statusCode: 400, statusMessage: "Company must be APPROVED before publishing services" });
+  }
+
+  const service = await Service.findOne({ _id: id, companyId: company._id });
+
+  if (!service) {
+    throw createError({ statusCode: 404, statusMessage: "Service not found" });
+  }
+
+  if (service.operationalStatus !== "ACTIVE") {
+    throw createError({ statusCode: 400, statusMessage: "Only ACTIVE services can be published" });
+  }
+
+  const category = await ServiceCategory.findOne({ _id: service.categoryId, isActive: true });
+
+  if (!category) {
+    throw createError({ statusCode: 400, statusMessage: "Service category must be active before publishing" });
+  }
+
+  service.publicationStatus = "PUBLISHED";
+  await service.save();
+  await service.populate(["companyId", "categoryId"]);
+
+  return service;
+};
+
+export const unpublishDemoCompanyService = async (id: string) => {
+  const company = await getDemoCompany();
+  const service = await Service.findOneAndUpdate(
+    { _id: id, companyId: company._id },
+    { publicationStatus: "UNPUBLISHED" },
+    { returnDocument: "after", runValidators: true },
+  )
+    .populate("companyId")
+    .populate("categoryId");
+
+  if (!service) {
+    throw createError({ statusCode: 404, statusMessage: "Service not found" });
+  }
+
+  return service;
 };
 
 const normalizeObjectId = (value: unknown, field: string) => {

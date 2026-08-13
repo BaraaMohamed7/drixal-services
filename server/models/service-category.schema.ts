@@ -1,3 +1,5 @@
+import { defineMongooseModel } from "#nuxt/mongoose";
+
 export const ServiceCategory = defineMongooseModel({
   name: "ServiceCategory",
   schema: {

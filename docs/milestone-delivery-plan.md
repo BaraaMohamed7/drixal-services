@@ -2,7 +2,7 @@
 
 ## Delivery Strategy
 
-Deliver a visible vertical slice first, then expand toward the full standalone multi-tenant platform.
+Deliver a visible vertical slice first, then expand toward the full standalone multi-tenant platform. Every backend phase must finish with a matching frontend UI before the next product phase is considered complete.
 
 The current vertical slice is:
 
@@ -28,9 +28,30 @@ Company
 | 5. Marketplace UI | Visible public workflow | `/marketplace`, service details, URL filters | Visitors can search, filter, and open service details |
 | 6. Demo Hardening | Make the slice demo-ready | Loading/error/empty states, validation, README update | Immediate Definition of Done is satisfied |
 
-## Active Scope
+## Frontend Rule
 
-Milestones 0 and 1 are the current implementation target.
+Each milestone has two completion gates:
+
+- Backend/API behavior is implemented and verified.
+- A corresponding modern, simple, responsive UI exists for the user-facing workflow introduced by that milestone.
+
+If a milestone is backend-heavy, the UI can be a minimal operational screen, but it must still demonstrate the new capability visually.
+
+## Progress
+
+| Milestone | Status |
+| --- | --- |
+| 0. Foundation Alignment | Implemented |
+| 1. Service Catalog API | Backend implemented, UI in progress |
+| 2. Publication Lifecycle | Backend implemented, UI in progress |
+| 3. Marketplace API | Next |
+| 4. Provider UI | Planned |
+| 5. Marketplace UI | Planned |
+| 6. Demo Hardening | Planned |
+
+## Current Scope
+
+Milestone 3 is the next implementation target.
 
 ### Milestone 0 Tasks
 
@@ -49,6 +70,16 @@ Milestones 0 and 1 are the current implementation target.
 - Implement service editing.
 - Keep authentication mocked/deferred.
 - Keep tenant ownership explicit through `companyId`.
+- Add provider services UI for list/create/edit.
+
+### Milestone 2 Tasks
+
+- Add dedicated publish endpoint.
+- Add dedicated unpublish endpoint.
+- Enforce approved-company rule before publishing.
+- Prevent generic service editing from changing publication status.
+- Keep draft/unpublished services hidden from public marketplace queries.
+- Add provider UI actions for publish and unpublish.
 
 ## Deferred From Current Scope
 
