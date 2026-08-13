@@ -1,3 +1,5 @@
+import "../../../models/customer.schema";
+import "../../../models/service.schema";
 import { upsertCustomerFromRequest } from "../../../utils/customers";
 import { getObjectIdOrThrow } from "../../../utils/mongodb";
 import { normalizeCreateServiceOrderInput } from "../../../utils/service-orders";

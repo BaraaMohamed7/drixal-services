@@ -1,3 +1,5 @@
+import { Customer } from "../../models/customer.schema";
+import { Service } from "../../models/service.schema";
 import { getDemoCompany } from "../../utils/services";
 
 export default defineEventHandler(async (event) => {
@@ -12,7 +14,11 @@ export default defineEventHandler(async (event) => {
     filter.$or = [{ orderNumber: new RegExp(search, "i") }, { title: new RegExp(search, "i") }, { assignedTo: new RegExp(search, "i") }];
   }
 
-  const items = await ServiceOrder.find(filter).populate(["customerId", "serviceId", "requestId"]).sort({ createdAt: -1 }).limit(100);
+  const items = await ServiceOrder.find(filter)
+    .populate({ path: "customerId", model: Customer })
+    .populate({ path: "serviceId", model: Service })
+    .sort({ createdAt: -1 })
+    .limit(100);
 
   return { items };
 });
