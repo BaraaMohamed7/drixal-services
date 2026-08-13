@@ -108,6 +108,18 @@ const serviceOrderSchema = new mongoose.Schema(
     status: { type: String, enum: ["DRAFT", "SCHEDULED", "ASSIGNED", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"], default: "DRAFT" },
     scheduledDate: { type: Date },
     assignedTo: { type: String, default: "", trim: true },
+    lines: [
+      {
+        title: { type: String, required: true, trim: true },
+        quantity: { type: Number, min: 1, default: 1 },
+        assignedTo: { type: String, default: "", trim: true },
+        status: { type: String, enum: ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"], default: "PENDING" },
+        cost: {
+          amount: { type: Number, min: 0 },
+          currency: { type: String, default: "EGP", uppercase: true, trim: true },
+        },
+      },
+    ],
   },
   { collection: "service_orders", timestamps: true },
 );
@@ -320,6 +332,11 @@ try {
       status: "IN_PROGRESS",
       scheduledDate: new Date("2026-08-14"),
       assignedTo: "Ahmed Hassan",
+      lines: [
+        { title: "Diagnosis", quantity: 1, assignedTo: "Ahmed Hassan", status: "COMPLETED", cost: { currency: "EGP" } },
+        { title: "Coil cleaning", quantity: 1, assignedTo: "Ahmed Hassan", status: "IN_PROGRESS", cost: { amount: 250, currency: "EGP" } },
+        { title: "Filter inspection", quantity: 1, assignedTo: "Omar Ali", status: "PENDING", cost: { amount: 150, currency: "EGP" } },
+      ],
     },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
@@ -337,6 +354,10 @@ try {
       status: "SCHEDULED",
       scheduledDate: new Date("2026-08-15"),
       assignedTo: "Omar Ali",
+      lines: [
+        { title: "Mount indoor unit", quantity: 1, assignedTo: "Omar Ali", status: "PENDING", cost: { amount: 600, currency: "EGP" } },
+        { title: "Install outdoor unit", quantity: 1, assignedTo: "Omar Ali", status: "PENDING", cost: { amount: 600, currency: "EGP" } },
+      ],
     },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );

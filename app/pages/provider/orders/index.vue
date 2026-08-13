@@ -88,7 +88,7 @@ const priorityColor = (value: ServiceOrderItem["priority"]) => ({
         <tbody>
           <tr v-for="order in orders" :key="order._id">
             <td>
-              <div class="font-bold text-[var(--drixal-ink)]">{{ order.orderNumber }}</div>
+              <NuxtLink :to="`/provider/orders/${order._id}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ order.orderNumber }}</NuxtLink>
               <div class="drixal-muted mt-1 text-xs">{{ order.title }}</div>
             </td>
             <td>{{ order.customerId?.name || '-' }}</td>

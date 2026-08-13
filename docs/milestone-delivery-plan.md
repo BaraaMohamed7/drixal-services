@@ -53,6 +53,17 @@ If a milestone is backend-heavy, the UI can be a minimal operational screen, but
 | 8. Customer Directory | Implemented |
 | 9. Request Lifecycle | Implemented |
 | 10. Service Orders | Implemented |
+| 11. Service Order Details and Lines | Implemented |
+| 12. Scheduling and Assignments | Planned |
+| 13. Authentication and Company Memberships | Planned |
+| 14. RBAC and Permissions | Planned |
+| 15. Company Onboarding and Approval | Planned |
+| 16. Operational Dashboard | Planned |
+| 17. Notifications | Planned |
+| 18. Payments and Invoices | Planned |
+| 19. Reviews and Quality Signals | Planned |
+| 20. Company Subscriptions | Planned |
+| 21. External ERP Integrations | Planned |
 
 ## Current Scope
 
@@ -146,17 +157,78 @@ Milestones 8-10 extend the visible operations workflow after the customer reques
 - Convert approved requests into service orders.
 - Add provider service orders UI using table-based operations layout.
 
+### Milestone 11 Tasks
+
+- Add service order line data model embedded under service orders.
+- Add service order detail API.
+- Add service order line creation API.
+- Add service order detail page with overview, service lines table, and summary panel.
+- Link service order list rows to service order details.
+
+### Milestone 12 Tasks
+
+- Add assignment fields and scheduling filters.
+- Add provider schedule/assignments UI.
+- Support assigning a technician/person name to service order lines.
+- Add compact operational date views without full calendar complexity.
+
+### Milestone 13 Tasks
+
+- Add authentication foundation.
+- Add company membership model.
+- Replace demo-company-only behavior with authenticated company context where appropriate.
+- Preserve demo mode for local evaluation.
+
+### Milestone 14 Tasks
+
+- Add roles and permissions model.
+- Protect provider APIs with permission checks.
+- Hide or disable unavailable UI actions by permission.
+
+### Milestone 15 Tasks
+
+- Add company registration/onboarding flow.
+- Add company approval status management UI.
+- Enforce approval rules across marketplace publishing and public discovery.
+
+### Milestone 16 Tasks
+
+- Add operational dashboard with attention-first KPIs.
+- Show open requests, active orders, overdue/scheduled work, and recent operational activity.
+- Keep dashboard compact and table-driven where possible.
+
+### Milestone 17 Tasks
+
+- Add notifications model.
+- Emit notifications for request submission, approval, conversion, and order status changes.
+- Add provider notification list UI.
+
+### Milestone 18 Tasks
+
+- Add invoice/payment data model.
+- Generate invoices from completed service orders.
+- Add invoice list/detail UI.
+
+### Milestone 19 Tasks
+
+- Add review model for completed services/orders.
+- Add public/provider review visibility rules.
+- Add restrained quality signals to marketplace and provider views.
+
+### Milestone 20 Tasks
+
+- Add company subscription model.
+- Add subscription status checks for provider capabilities.
+- Add administration UI for subscription state.
+
+### Milestone 21 Tasks
+
+- Add external ERP integration configuration model.
+- Add integration health/status UI.
+- Add export/sync placeholders for service orders, customers, invoices, and activity.
+
 ## Deferred From Current Scope
 
-- Authentication.
-- Company registration and approval UI.
-- Company memberships and RBAC.
-- Bookings and service requests.
 - Full booking lifecycle.
-- Service orders and execution.
-- Scheduling, resources, and assets.
-- Payments and invoices.
-- Notifications.
-- Reviews.
-- Company subscriptions.
-- External ERP integrations.
+- Resource and asset management beyond basic assignments.
+- Advanced service execution checklists.

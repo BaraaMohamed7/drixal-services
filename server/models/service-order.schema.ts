@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 
 export const serviceOrderStatusValues = ["DRAFT", "SCHEDULED", "ASSIGNED", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"] as const;
 export const serviceOrderPriorityValues = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+export const serviceOrderLineStatusValues = ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
 
 export const ServiceOrder = defineMongooseModel({
   name: "ServiceOrder",
@@ -60,6 +61,42 @@ export const ServiceOrder = defineMongooseModel({
       default: "",
       trim: true,
     },
+    lines: [
+      {
+        title: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        quantity: {
+          type: Number,
+          min: 1,
+          default: 1,
+        },
+        assignedTo: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+        status: {
+          type: String,
+          enum: serviceOrderLineStatusValues,
+          default: "PENDING",
+        },
+        cost: {
+          amount: {
+            type: Number,
+            min: 0,
+          },
+          currency: {
+            type: String,
+            default: "EGP",
+            uppercase: true,
+            trim: true,
+          },
+        },
+      },
+    ],
   },
   options: {
     collection: "service_orders",

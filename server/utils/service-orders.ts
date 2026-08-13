@@ -1,4 +1,4 @@
-import { serviceOrderPriorityValues, serviceOrderStatusValues } from "../models/service-order.schema";
+import { serviceOrderLineStatusValues, serviceOrderPriorityValues, serviceOrderStatusValues } from "../models/service-order.schema";
 import { isValidObjectId } from "./mongodb";
 
 type ServiceOrderInput = {
@@ -11,6 +11,17 @@ type ServiceOrderInput = {
   status?: unknown;
   scheduledDate?: unknown;
   assignedTo?: unknown;
+};
+
+type ServiceOrderLineInput = {
+  title?: unknown;
+  quantity?: unknown;
+  assignedTo?: unknown;
+  status?: unknown;
+  cost?: {
+    amount?: unknown;
+    currency?: unknown;
+  };
 };
 
 const requiredString = (value: unknown, field: string) => {
@@ -35,6 +46,15 @@ const objectIdString = (value: unknown, field: string) => {
 const normalizeDate = (value: unknown) => {
   const date = optionalString(value);
   return date ? new Date(date) : undefined;
+};
+
+const normalizePositiveNumber = (value: unknown, field: string, fallback?: number) => {
+  if (value === undefined || value === null || value === "") return fallback;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) {
+    throw createError({ statusCode: 400, statusMessage: `${field} must be a positive number` });
+  }
+  return number;
 };
 
 const normalizePriority = (value: unknown) => {
@@ -69,4 +89,31 @@ export const normalizeCreateServiceOrderInput = async (companyId: unknown, body:
   status: normalizeStatus(body.status),
   scheduledDate: normalizeDate(body.scheduledDate),
   assignedTo: optionalString(body.assignedTo),
+  lines: [
+    {
+      title: requiredString(body.title, "title"),
+      quantity: 1,
+      assignedTo: optionalString(body.assignedTo),
+      status: "PENDING",
+      cost: { currency: "EGP" },
+    },
+  ],
 });
+
+export const normalizeCreateServiceOrderLineInput = (body: ServiceOrderLineInput) => {
+  const status = body.status === undefined || body.status === "" ? "PENDING" : body.status;
+  if (typeof status !== "string" || !serviceOrderLineStatusValues.includes(status as (typeof serviceOrderLineStatusValues)[number])) {
+    throw createError({ statusCode: 400, statusMessage: "line status is invalid" });
+  }
+
+  return {
+    title: requiredString(body.title, "title"),
+    quantity: normalizePositiveNumber(body.quantity, "quantity", 1),
+    assignedTo: optionalString(body.assignedTo),
+    status,
+    cost: {
+      amount: normalizePositiveNumber(body.cost?.amount, "cost.amount"),
+      currency: optionalString(body.cost?.currency).toUpperCase() || "EGP",
+    },
+  };
+};
