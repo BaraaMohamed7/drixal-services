@@ -4,11 +4,15 @@ const { locale, t } = useLocale();
 const auth = useAuth();
 await auth.load();
 const mobileOpen = ref(false);
+const profileOpen = ref(false);
+
+const isMarketplace = computed(() => route.path.startsWith("/marketplace"));
 
 const workspace = computed(() => {
   if (route.path.startsWith("/super-admin")) return "superAdmin";
   if (route.path.startsWith("/company-admin")) return "companyAdmin";
   if (route.path.startsWith("/employee")) return "employee";
+  if (route.path.startsWith("/marketplace")) return "marketplace";
   return "customer";
 });
 
@@ -39,9 +43,10 @@ const navItems = computed(() => ({
     { label: t("common.marketplace"), to: "/marketplace", icon: "i-lucide-store" },
     ...(auth.session.value.user?.platformRole === "SUPER_ADMIN" ? [] : [{ label: t("common.createCompany"), to: "/register/company", icon: "i-lucide-building-2" }]),
   ],
+  marketplace: [],
 }[workspace.value]));
 
-const workspaceRoot = computed(() => ({ superAdmin: "/super-admin", companyAdmin: "/company-admin", employee: "/employee", customer: "/customer" }[workspace.value]));
+const workspaceRoot = computed(() => ({ superAdmin: "/super-admin", companyAdmin: "/company-admin", employee: "/employee", customer: "/customer", marketplace: "/marketplace" }[workspace.value]));
 const isActive = (to: string) => route.path === to || (to !== workspaceRoot.value && route.path.startsWith(`${to}/`));
 const accountRole = computed(() => {
   if (workspace.value === "superAdmin") return t("roles.SUPER_ADMIN");
@@ -50,8 +55,75 @@ const accountRole = computed(() => {
 });
 const userInitial = computed(() => auth.session.value.user?.name?.trim().charAt(0).toUpperCase() || "D");
 const drawerSide = computed(() => locale.value === "ar" ? "right" : "left");
+const sidebarOpen = ref(!isMarketplace.value);
 
-watch(() => route.path, () => { mobileOpen.value = false; });
+watch(() => route.path, () => {
+  mobileOpen.value = false;
+  profileOpen.value = false;
+  sidebarOpen.value = !route.path.startsWith("/marketplace");
+});
+
+
+
+const handleWorkspaceSwitch = async (value: string) => {
+  if (!value || value === selectedWorkspace.value) return;
+  try {
+    if (value === "personal") await auth.switchWorkspace({ type: "PERSONAL" });
+    else if (value === "platform") await auth.switchWorkspace({ type: "PLATFORM" });
+    else if (value.startsWith("company:")) await auth.switchWorkspace({ type: "COMPANY", companyId: value.slice(8) });
+    await navigateTo(auth.workspaceHome.value);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    profileOpen.value = false;
+  }
+};
+
+const workspaceOptions = computed(() => {
+  const options = [{
+    label: t("workspaces.personal.title"),
+    description: t("workspaces.personal.description"),
+    icon: "i-lucide-user-round",
+    value: "personal",
+  }];
+
+  for (const membership of auth.session.value.memberships) {
+    if (!membership.company) continue;
+    options.push({
+      label: membership.company.name,
+      description: t(`roles.${membership.role}`),
+      icon: "i-lucide-building-2",
+      value: `company:${membership.company.id}`,
+    });
+  }
+
+  if (auth.session.value.user?.platformRole === "SUPER_ADMIN") {
+    options.push({
+      label: t("workspaces.platform.title"),
+      description: t("roles.SUPER_ADMIN"),
+      icon: "i-lucide-shield-check",
+      value: "platform",
+    });
+  }
+
+  return options;
+});
+
+const selectedWorkspace = computed(() => {
+  const workspace = auth.session.value.activeWorkspace;
+  if (workspace?.type === "COMPANY") return `company:${workspace.companyId}`;
+  if (workspace?.type === "PLATFORM") return "platform";
+  return "personal";
+});
+
+const profileMenuRef = ref<HTMLElement | null>(null);
+const onClickOutsideProfile = (event: MouseEvent) => {
+  if (profileMenuRef.value && !profileMenuRef.value.contains(event.target as Node)) {
+    profileOpen.value = false;
+  }
+};
+onMounted(() => document.addEventListener("click", onClickOutsideProfile));
+onBeforeUnmount(() => document.removeEventListener("click", onClickOutsideProfile));
 </script>
 
 <template>
@@ -61,37 +133,86 @@ watch(() => route.path, () => { mobileOpen.value = false; });
         <DrixalBrand />
       </NuxtLink>
       <div class="flex min-w-0 flex-1 items-center justify-between">
-         <div class="flex min-w-0 items-center">
-           <UButton icon="i-lucide-menu" color="neutral" variant="ghost" class="mx-1 lg:hidden" :aria-label="t('shell.openNavigation')" @click="mobileOpen = true" />
-           <span class="max-w-36 truncate text-xs font-semibold lg:hidden">{{ auth.session.value.company?.name || workspaceTitle }}</span>
-           <div class="hidden min-w-0 px-4 lg:block">
+        <div class="flex min-w-0 items-center">
+          <UButton icon="i-lucide-menu" color="neutral" variant="ghost" class="mx-1 lg:hidden" :aria-label="t('shell.openNavigation')" @click="mobileOpen = true" />
+          <span class="max-w-36 truncate text-xs font-semibold lg:hidden">{{ auth.session.value.company?.name || workspaceTitle }}</span>
+          <div class="hidden min-w-0 px-4 lg:block">
             <span class="truncate text-sm font-semibold">{{ workspaceTitle }}</span>
             <span class="mx-2 text-[var(--color-text-disabled)]">/</span>
             <span class="truncate text-xs text-[var(--drixal-muted)]">{{ auth.session.value.company?.name || auth.session.value.user?.name }}</span>
           </div>
         </div>
-        <div class="flex h-full items-center">
+        <div class="flex h-full items-center gap-2">
           <AppPreferences class="me-1 hidden sm:flex" />
-          <div class="hidden h-full items-center gap-3 border-s border-[var(--drixal-line)] px-4 sm:flex">
-            <span class="grid size-8 place-items-center rounded-full bg-[var(--color-brand-subtle)] text-xs font-bold text-[var(--drixal-blue)]">{{ userInitial }}</span>
-            <span class="max-w-36 truncate text-xs font-semibold">{{ auth.session.value.user?.name }}</span>
+          
+          <div v-if="auth.session.value.authenticated" ref="profileMenuRef" class="relative">
+            <UButton
+              icon="i-lucide-chevron-down"
+              color="neutral"
+              variant="ghost"
+              class="h-full items-center gap-2 border-s border-[var(--drixal-line)] px-4"
+              :aria-label="t('shell.accountMenu')"
+              :aria-expanded="profileOpen"
+              @click="profileOpen = !profileOpen"
+            >
+              <span class="grid size-8 place-items-center rounded-full bg-[var(--color-brand-subtle)] text-xs font-bold text-[var(--drixal-blue)]">{{ userInitial }}</span>
+              <span class="max-w-36 truncate text-xs font-semibold hidden sm:inline">{{ auth.session.value.user?.name }}</span>
+            </UButton>
+
+            <div
+              v-if="profileOpen"
+              class="absolute end-0 top-full z-50 mt-2 min-w-60 rounded-lg border border-[var(--drixal-line)] bg-[var(--drixal-surface)] p-1.5 shadow-lg"
+            >
+              <p class="px-2 py-1 text-xs font-semibold text-[var(--drixal-muted)]">{{ t("shell.switchWorkspace") }}</p>
+              <button
+                v-for="item in workspaceOptions"
+                :key="item.value"
+                type="button"
+                class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-start text-sm font-semibold transition-colors hover:bg-[var(--drixal-hover)]"
+                :class="item.value === selectedWorkspace ? 'bg-[var(--drixal-soft-strong)] text-[var(--drixal-blue)]' : 'text-[var(--drixal-ink)]'"
+                @click="handleWorkspaceSwitch(item.value)"
+              >
+                <UIcon :name="item.icon" class="size-4 shrink-0" />
+                <span class="min-w-0">
+                  <span class="block truncate">{{ item.label }}</span>
+                  <span v-if="item.description" class="block truncate text-xs font-normal text-[var(--drixal-muted)]">{{ item.description }}</span>
+                </span>
+              </button>
+              <div class="my-1.5 border-t border-[var(--drixal-line)]" />
+              <button
+                type="button"
+                class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-start text-sm font-semibold text-[var(--drixal-ink)] transition-colors hover:bg-[var(--drixal-hover)]"
+                @click="auth.logout"
+              >
+                <UIcon name="i-lucide-log-out" class="size-4 shrink-0" />
+                <span>{{ t("common.logout") }}</span>
+              </button>
+            </div>
+          </div>
+          
+          <div v-else class="flex items-center gap-2 px-2">
+            <UButton to="/auth/login" :label="t('auth.signIn')" color="neutral" variant="ghost" />
+            <UButton to="/auth/register" :label="t('auth.createAccount')" />
           </div>
         </div>
       </div>
     </header>
 
-    <aside class="fixed inset-y-0 start-0 z-30 hidden w-60 border-e border-[var(--drixal-line)] bg-[var(--drixal-surface)] pt-14 lg:flex lg:flex-col">
-      <div class="px-4 pb-3 pt-5">
+    <aside
+      v-show="sidebarOpen"
+      class="fixed inset-y-0 start-0 z-30 hidden w-60 border-e border-[var(--drixal-line)] bg-[var(--drixal-surface)] pt-14 lg:flex lg:flex-col transition-all duration-300"
+      :class="{ 'w-0 overflow-hidden border-e-0': !sidebarOpen }"
+    >
+      <div v-if="navItems.length > 0" class="px-4 pb-3 pt-5">
         <p class="text-xs font-semibold text-[var(--drixal-muted)]">{{ t("shell.workspace") }}</p>
-        <WorkspaceSwitcher class="mt-2" />
       </div>
-      <nav class="grid gap-1 px-3 py-2" :aria-label="workspaceTitle">
+      <nav v-if="navItems.length > 0" class="grid gap-1 px-3 py-2" :aria-label="workspaceTitle">
         <NuxtLink v-for="item in navItems" :key="item.to" :to="item.to" class="flex min-h-10 items-center gap-3 rounded-md px-3 text-sm font-semibold transition-colors" :class="isActive(item.to) ? 'bg-[var(--drixal-soft-strong)] text-[var(--drixal-blue)]' : 'text-[var(--drixal-muted)] hover:bg-[var(--drixal-hover)] hover:text-[var(--drixal-ink)]'">
           <UIcon :name="item.icon" class="size-4 shrink-0" />
           <span>{{ item.label }}</span>
         </NuxtLink>
       </nav>
-      <div class="mt-auto border-t border-[var(--drixal-line)]">
+      <div v-if="auth.session.value.authenticated" class="mt-auto border-t border-[var(--drixal-line)]">
         <div class="px-4 py-4 text-xs">
           <p class="truncate font-bold">{{ auth.session.value.user?.name }}</p>
           <p class="mt-1 truncate text-[var(--drixal-muted)]">{{ accountRole }}</p>
@@ -100,11 +221,31 @@ watch(() => route.path, () => { mobileOpen.value = false; });
       </div>
     </aside>
 
-    <main class="min-w-0 pt-14 lg:ps-60">
+    <main class="min-w-0 pt-14" :class="sidebarOpen ? 'lg:ps-60' : ''">
       <div class="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
         <slot />
       </div>
     </main>
+
+    <UButton
+      v-if="isMarketplace"
+      icon="i-lucide-chevron-right"
+      color="neutral"
+      variant="outline"
+      class="fixed bottom-6 start-6 z-20 lg:hidden"
+      :aria-label="t('shell.openNavigation')"
+      @click="sidebarOpen = true"
+    />
+
+    <UButton
+      v-if="sidebarOpen && !isMarketplace"
+      icon="i-lucide-chevron-left"
+      color="neutral"
+      variant="outline"
+      class="fixed top-16 start-60 z-30 lg:hidden"
+      :aria-label="t('shell.closeNavigation')"
+      @click="sidebarOpen = false"
+    />
 
     <USlideover
       v-model:open="mobileOpen"
@@ -115,21 +256,47 @@ watch(() => route.path, () => { mobileOpen.value = false; });
       :ui="{ content: 'max-w-80', body: 'flex flex-col p-0 sm:p-0' }"
     >
       <template #body>
-        <div class="border-b border-[var(--drixal-line)] p-4">
+        <div v-if="navItems.length > 0" class="border-b border-[var(--drixal-line)] p-4">
           <p class="text-xs font-semibold text-[var(--drixal-muted)]">{{ t("shell.currentWorkspace") }}</p>
-          <WorkspaceSwitcher class="mt-2" />
+          <USelect
+            :model-value="auth.session.value.activeWorkspace?.type === 'PERSONAL' ? 'personal' : auth.session.value.activeWorkspace?.type === 'PLATFORM' ? 'platform' : auth.session.value.activeWorkspace?.type === 'COMPANY' ? `company:${auth.session.value.activeWorkspace.companyId}` : 'personal'"
+            :items="[
+              { label: t('workspaces.personal.title'), description: t('workspaces.personal.description'), icon: 'i-lucide-user-round', value: 'personal' },
+              ...auth.session.value.memberships.filter(m => m.company).map(m => ({
+                label: m.company!.name,
+                description: t(`roles.${m.role}`),
+                icon: 'i-lucide-building-2',
+                value: `company:${m.company!.id}`,
+              })),
+              ...(auth.session.value.user?.platformRole === 'SUPER_ADMIN' ? [{
+                label: t('workspaces.platform.title'),
+                description: t('roles.SUPER_ADMIN'),
+                icon: 'i-lucide-shield-check',
+                value: 'platform',
+              }] : []),
+            ]"
+            value-key="value"
+            label-key="label"
+            class="w-full mt-2"
+            :aria-label="t('shell.switchWorkspace')"
+            @update:model-value="handleWorkspaceSwitch"
+          />
         </div>
-        <nav class="grid gap-1 p-3" :aria-label="workspaceTitle">
+        <nav v-if="navItems.length > 0" class="grid gap-1 p-3" :aria-label="workspaceTitle">
           <NuxtLink v-for="item in navItems" :key="item.to" :to="item.to" class="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold" :class="isActive(item.to) ? 'bg-[var(--drixal-soft-strong)] text-[var(--drixal-blue)]' : 'text-[var(--drixal-muted)] hover:bg-[var(--drixal-hover)] hover:text-[var(--drixal-ink)]'">
             <UIcon :name="item.icon" class="size-4 shrink-0" />
             <span>{{ item.label }}</span>
           </NuxtLink>
         </nav>
-        <div class="mt-auto border-t border-[var(--drixal-line)] p-4 text-xs">
+        <div v-if="auth.session.value.authenticated" class="mt-auto border-t border-[var(--drixal-line)] p-4 text-xs">
           <p class="truncate font-bold">{{ auth.session.value.user?.name }}</p>
           <p class="mt-1 truncate text-[var(--drixal-muted)]">{{ accountRole }}</p>
           <AppPreferences class="mt-4" />
           <UButton class="mt-3 justify-start" :label="t('common.logout')" icon="i-lucide-log-out" color="neutral" variant="ghost" block @click="auth.logout" />
+        </div>
+        <div v-else class="mt-auto border-t border-[var(--drixal-line)] p-4 text-xs">
+          <UButton class="w-full justify-start" to="/auth/login" :label="t('auth.signIn')" color="neutral" variant="ghost" />
+          <UButton class="w-full justify-start mt-2" to="/auth/register" :label="t('auth.createAccount')" />
         </div>
       </template>
     </USlideover>

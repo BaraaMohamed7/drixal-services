@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: "public" });
+definePageMeta({ layout: "workspace" });
 
 type MarketplaceService = {
   id: string;
