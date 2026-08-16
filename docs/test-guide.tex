@@ -1,0 +1,503 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathpazo}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+
+\definecolor{drixalblue}{HTML}{2546F0}
+\definecolor{drixalink}{HTML}{172B4D}
+\definecolor{drixalmuted}{HTML}{626F86}
+\definecolor{drixalsurface}{HTML}{F7F8F9}
+\definecolor{drixalborder}{HTML}{DCDFE4}
+\definecolor{codebg}{HTML}{F1F2F4}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=drixalblue,
+  urlcolor=drixalblue,
+  pdftitle={Drixal Service Platform -- Test Guide},
+  pdfauthor={Drixal Engineering}
+}
+
+\titleformat{\section}{\Large\bfseries\color{drixalblue}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{drixalink}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{drixalink}}{\thesubsubsection}{0.6em}{}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\lstdefinestyle{drixal}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{drixalborder},
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=8pt,
+  belowskip=8pt,
+}
+
+\newtcolorbox{notebox}{
+  colback=drixalsurface,
+  colframe=drixalblue,
+  boxrule=0.8pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt,
+  breakable,
+}
+
+\newcommand{\account}[3]{%
+  \begin{tcolorbox}[colback=drixalsurface, colframe=drixalblue, boxrule=0.8pt, left=10pt, right=10pt, top=8pt, bottom=8pt, breakable]
+    \textbf{\color{drixalblue}#1}\\
+    \begin{tabular}{@{}ll}
+      \textbf{Email:} & \texttt{#2} \\
+      \textbf{Password:} & \texttt{#3} \\
+    \end{tabular}
+  \end{tcolorbox}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{drixalmuted}{Drixal Service Platform}}
+\fancyhead[R]{\small\textcolor{drixalmuted}{Test Guide}}
+\fancyfoot[C]{\small\thepage}
+
+\begin{document}
+
+% ============================================================
+% TITLE PAGE
+% ============================================================
+\begin{titlepage}
+  \centering
+  \vspace*{2.5cm}
+  {\Huge\bfseries\color{drixalblue} Drixal Service Platform}\\[0.6cm]
+  {\Large\bfseries Test Credentials and Flow Testing Guide}\\[1.2cm]
+  {\large\color{drixalmuted} How to exercise every role-based flow with the seeded demo accounts}\\[0.4cm]
+  {\large\color{drixalmuted} Version 1.0 --- August 2026}\\[2cm]
+  \begin{notebox}
+    \textbf{Scope:} This document lists the demo test credentials and explains, step by step, how to test the main workflows of the platform using each credential. It also covers the marketplace, service requests, service orders, scheduling, customer tracking, company approval, and role permissions.
+  \end{notebox}
+  \vfill
+  {\small\color{drixalmuted} Prepared for quality assurance, demo, and product-owner review.}
+\end{titlepage}
+
+% ============================================================
+\section{Introduction}
+\label{sec:intro}
+
+This guide is written for anyone who needs to verify the behaviour of the Drixal Service Platform manually: developers, QA engineers, and product owners running a demo.
+
+The platform is a multi-tenant service-management application built with Nuxt~4, TypeScript, MongoDB and Mongoose. It connects public service discovery, customer requests, provider review and approval, order conversion, assignment, scheduling, and private customer tracking in one role-aware workflow.
+
+Throughout this guide, the term \textbf{flow} means a complete user journey that starts with an action (for example, signing in or opening the marketplace) and ends with a verifiable outcome (for example, an order created, a company approved, or a service published).
+
+% ============================================================
+\section{Before You Start: Setup}
+\label{sec:setup}
+
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item \textbf{Install dependencies:} \texttt{npm install}
+  \item \textbf{Create the environment file:} copy \texttt{.env.example} to \texttt{.env} and set a MongoDB connection string:
+  \begin{lstlisting}[style=drixal]
+# MongoDB connection string used by the server runtime
+NUXT_MONGOOSE_URI=mongodb://127.0.0.1:27017/drixal
+
+# Runtime environment: development | production
+NODE_ENV=development
+
+# Public origin used for CSRF / origin checks
+APP_ORIGIN=http://localhost:3000
+
+# Demo password used by the seed script (must match .env if set)
+DEMO_PASSWORD=DrixalDemo123!
+  \end{lstlisting}
+  \item \textbf{Seed the demo data:} \texttt{npm run seed}
+  \item \textbf{Start the development server:} \texttt{npm run dev}
+  \item \textbf{Open the application:} \url{http://localhost:3000}
+\end{enumerate}
+
+\begin{notebox}
+  The seeded demo accounts all use the password \texttt{DrixalDemo123!} unless \texttt{DEMO\_PASSWORD} was changed \emph{before} running \texttt{npm run seed}. If you changed it, replace the password everywhere below.
+\end{notebox}
+
+% ============================================================
+\section{Test Credentials}
+\label{sec:credentials}
+
+The seed script creates six demo accounts. Their roles, memberships, and landing workspaces are described below.
+
+\begin{longtable}{@{}L{3.6cm}L{5.2cm}C{2.6cm}L{3.6cm}@{}}
+  \toprule
+  \textbf{Role / Workspace} & \textbf{Email} & \textbf{Password} & \textbf{Member of} \\
+  \midrule
+  \endhead
+  Super Admin (Platform Administration) & \texttt{admin@drixal.example} & \texttt{DrixalDemo123!} & Platform only \\
+  Company Manager / Admin (Cool Air Services \& TechFix) & \texttt{manager@coolair.example} & \texttt{DrixalDemo123!} & Cool Air Services (Manager), TechFix (Owner) \\
+  Company Technician (employee) & \texttt{technician@coolair.example} & \texttt{DrixalDemo123!} & Cool Air Services (Technician) \\
+  Company Viewer (read-only employee) & \texttt{viewer@coolair.example} & \texttt{DrixalDemo123!} & Cool Air Services (Viewer) \\
+  Customer (Personal workspace) & \texttt{customer@drixal.example} & \texttt{DrixalDemo123!} & None \\
+  Pending company owner & \texttt{owner@nilehome.example} & \texttt{DrixalDemo123!} & Nile Home Care (Owner, pending approval) \\
+  \bottomrule
+\end{longtable}
+
+\begin{notebox}
+  \textbf{Workspace switching:} a user with company memberships can switch between the \emph{Personal} workspace, each \emph{company} they belong to, and (for the Super Admin) the \emph{Platform Administration} workspace. The switcher is available in the left navigation of every workspace screen.
+\end{notebox}
+
+\subsection{Seeded demo companies}
+\label{sec:companies}
+
+\begin{longtable}{@{}L{4.4cm}L{4cm}C{2.2cm}L{4.6cm}@{}}
+  \toprule
+  \textbf{Company} & \textbf{Location} & \textbf{Status} & \textbf{Services} \\
+  \midrule
+  \endhead
+  Cool Air Services & Alexandria, Sidi Gaber & Approved (rating 4.7) & AC Maintenance, AC Installation, Emergency AC Repair \\
+  TechFix & Alexandria, Smouha & Approved (rating 4.5) & Laptop Maintenance, Remote IT Support \\
+  Nile Home Care & Cairo, Nasr City & Pending approval & (none published yet) \\
+  \bottomrule
+\end{longtable}
+
+% ============================================================
+\section{Common Testing Notes}
+\label{sec:common}
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item \textbf{Login:} all protected flows start at \texttt{/auth/login}. After signing in you land on the workspace home of the selected context.
+  \item \textbf{Public marketplace:} \texttt{/marketplace} works without any login. Only \emph{published}, \emph{active} services of \emph{approved} companies appear.
+  \item \textbf{Cross-tenant isolation:} while testing, verify that company-scoped data is never visible outside the selected company (for example, requests/orders belonging to Cool Air Services must not appear under TechFix).
+  \item \textbf{Reset state:} re-run \texttt{npm run seed} to restore the demo database to its original state between test runs.
+  \item \textbf{Responsive behaviour:} the interface is bilingual (Arabic RTL / English LTR) and responsive. Verify key flows at desktop and mobile widths, and switch the language with the preference control when present.
+\end{itemize}
+
+% ============================================================
+\section{Flow: Customer Journey (Public + Personal)}
+\label{sec:flow-customer}
+
+This flow exercises the public marketplace, authentication, request submission, and private customer tracking.
+
+\account{Customer}{customer@drixal.example}{DrixalDemo123!}
+
+\subsection{1. Browse the marketplace (no login)}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \url{http://localhost:3000/marketplace}.
+  \item Verify the marketplace lists published services: AC Maintenance, AC Installation, Emergency AC Repair (Cool Air Services) and Laptop Maintenance, Remote IT Support (TechFix).
+  \item Use the search box and filters (category, city, min price, max price). Verify the URL query string updates (e.g.\ \texttt{?search=ac\&category=home-services\&city=Alexandria}).
+  \item Confirm that \emph{Nile Home Care} does not appear (it is pending approval).
+\end{enumerate}
+
+\subsection{2. Open a service detail page}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open a service, e.g.\ \texttt{/marketplace/companies/cool-air-services/services/ac-maintenance}.
+  \item Verify the price (500 EGP), duration (90 min), location type, scheduling requirement, category badge, and provider profile card are displayed.
+  \item The request form is visible; submitting requires login.
+\end{enumerate}
+
+\subsection{3. Sign in as the customer}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Choose \emph{Sign in} from the service detail page, or go to \texttt{/auth/login}.
+  \item Sign in with \texttt{customer@drixal.example} / \texttt{DrixalDemo123!}.
+  \item You land in the \emph{Personal} workspace (\texttt{/customer}).
+\end{enumerate}
+
+\subsection{4. Submit a service request}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Return to the AC Maintenance service detail page.
+  \item Fill in the request form: name, phone, optional email/city, preferred date, and a short message.
+  \item Submit the request and verify the success confirmation appears.
+\end{enumerate}
+
+\subsection{5. Track the request privately}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Go to \texttt{/customer/requests} (Personal workspace $\rightarrow$ Requests).
+  \item Verify the newly submitted request appears with status \texttt{NEW} (or the current seeded status) and shows the provider name.
+\end{enumerate}
+
+\subsection{6. Track orders (after provider action)}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Go to \texttt{/customer/orders} and \texttt{/customer/orders/\$id}.
+  \item Verify the seeded order \texttt{SO-1001} (AC Maintenance, \texttt{IN\_PROGRESS}) and \texttt{SO-1002} (AC Installation, \texttt{SCHEDULED}) are visible with their service lines and summary.
+  \item Confirm the customer can see the provider name, scheduled date, assigned technician, and priority, but not internal costs or notes.
+\end{enumerate}
+
+% ============================================================
+\section{Flow: Company Manager (Provider Operations)}
+\label{sec:flow-manager}
+
+This is the most comprehensive flow. It covers service management, the request inbox, order conversion, service lines, scheduling, customers, and company profile.
+
+\account{Company Manager}{manager@coolair.example}{DrixalDemo123!}
+
+\subsection{1. Sign in and select the company}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Sign in at \texttt{/auth/login}.
+  \item Use the workspace switcher to select \textbf{Cool Air Services}.
+  \item You land in the Company Admin workspace (\texttt{/company-admin}).
+\end{enumerate}
+
+\subsection{2. Dashboard overview}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Verify the metrics (services, open requests, active orders, customers) reflect the seeded data.
+  \item Verify the work-queue table lists active orders and the demand-pipeline panel shows request statuses.
+\end{enumerate}
+
+\subsection{3. Service catalog management}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/company-admin/services}.
+  \item Create a new service (\texttt{/company-admin/services/new}): name, description, category, location type, pricing type/amount, duration, scheduling requirement.
+  \item Verify the new service appears with status \texttt{DRAFT}.
+  \item Edit the service (\texttt{/company-admin/services/\$id/edit}) and save the changes.
+  \item \textbf{Publish} the service and verify its status becomes \texttt{PUBLISHED}.
+  \item Confirm the published service now appears in the public marketplace.
+  \item \textbf{Unpublish} the service and confirm it disappears from the marketplace.
+  \item Use search and the publication-status filter in the list.
+\end{enumerate}
+
+\subsection{4. Request inbox (approve / reject / convert)}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/company-admin/requests}.
+  \item The seeded approved request (from the customer flow) is listed; filter by status using the selector.
+  \item \textbf{Approve} a \texttt{NEW} request, verify it becomes \texttt{APPROVED}.
+  \item \textbf{Reject} a request, verify the confirmation dialog and the status change to \texttt{REJECTED}.
+  \item \textbf{Convert} an \texttt{APPROVED} request into a service order; verify the request becomes \texttt{CONVERTED} and a new order is created.
+\end{enumerate}
+
+\subsection{5. Service orders}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/company-admin/orders}.
+  \item Verify seeded orders \texttt{SO-1001} and \texttt{SO-1002} with statuses, priorities, assignments, and scheduled dates.
+  \item Open the order detail (\texttt{/company-admin/orders/\$id}).
+  \item Verify the overview, the service-lines table, and the summary panel.
+  \item \textbf{Add a service line} (title, quantity, assignee, cost).
+  \item \textbf{Update a line assignment} and status via the inline controls.
+  \item \textbf{Assign the order} to a company member from the summary panel.
+\end{enumerate}
+
+\subsection{6. Schedule}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/company-admin/schedule}.
+  \item Verify scheduled orders are grouped by date with customer, service, assignee, and status.
+\end{enumerate}
+
+\subsection{7. Customers directory}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/company-admin/customers}.
+  \item Verify the seeded customers (Demo Customer, Delta Co.) appear with contact details.
+  \item Use the search box; verify pagination and the empty/error states when applicable.
+\end{enumerate}
+
+\subsection{8. Company profile}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/company-admin/company}.
+  \item Verify the company name, slug, status badge (\texttt{APPROVED}), location, and description.
+\end{enumerate}
+
+\subsection{9. Multi-company membership}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Switch to \textbf{TechFix} via the workspace switcher.
+  \item Verify TechFix shows its own services (Laptop Maintenance, Remote IT Support) and an empty request/order queue, proving tenant isolation.
+\end{enumerate}
+
+% ============================================================
+\section{Flow: Company Employee (Technician)}
+\label{sec:flow-technician}
+
+\account{Company Technician}{technician@coolair.example}{DrixalDemo123!}
+
+\subsection{1. Sign in and select the company}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Sign in at \texttt{/auth/login}; select \textbf{Cool Air Services}.
+  \item You land in the Employee workspace (\texttt{/employee}).
+\end{enumerate}
+
+\subsection{2. Review assigned work}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Verify the dashboard shows active orders and scheduled work metrics.
+  \item Open \texttt{/employee/orders}; verify the list of active orders.
+  \item Open an order detail (\texttt{/employee/orders/\$id}).
+  \item As a \texttt{TECHNICIAN}, the page is read-only: verify there are no edit/assign controls and the read-only indicator appears where actions would otherwise be shown.
+\end{enumerate}
+
+\subsection{3. Schedule view}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/employee/schedule}; verify assigned and scheduled work with dates.
+\end{enumerate}
+
+% ============================================================
+\section{Flow: Company Employee (Viewer)}
+\label{sec:flow-viewer}
+
+\account{Company Viewer}{viewer@coolair.example}{DrixalDemo123!}
+
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Sign in and select \textbf{Cool Air Services}; you land in the Employee workspace.
+  \item Verify the viewer can read services, requests, customers, and orders lists.
+  \item Verify read-only indicators on actions; the viewer must not be able to publish services, manage orders, or decide requests.
+\end{enumerate}
+
+% ============================================================
+\section{Flow: Super Admin (Platform Administration)}
+\label{sec:flow-superadmin}
+
+\account{Super Admin}{admin@drixal.example}{DrixalDemo123!}
+
+\subsection{1. Sign in and enter Platform Administration}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Sign in at \texttt{/auth/login}.
+  \item Select \textbf{Platform Administration} from the workspace switcher.
+  \item You land in the Super Admin workspace (\texttt{/super-admin}).
+\end{enumerate}
+
+\subsection{2. Dashboard}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Verify the platform metrics (total, pending, approved, suspended companies) and the review queue table.
+\end{enumerate}
+
+\subsection{3. Company review and approval}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/super-admin/companies}.
+  \item Verify the list includes Cool Air Services (\texttt{APPROVED}), TechFix (\texttt{APPROVED}), and Nile Home Care (\texttt{PENDING}).
+  \item Filter by status and use search.
+  \item \textbf{Approve} Nile Home Care; verify its status becomes \texttt{APPROVED} and the marketplace now shows it.
+  \item \textbf{Reject} a company (confirmation dialog) and verify the status change.
+  \item \textbf{Suspend} an approved company and \textbf{reactivate} it; verify its services disappear from / reappear in the marketplace while suspended/approved.
+  \item Verify invalid transitions are rejected (for example, approving an already approved company should be a no-op or handled gracefully).
+\end{enumerate}
+
+% ============================================================
+\section{Flow: Pending Company Owner}
+\label{sec:flow-owner}
+
+\account{Pending Owner}{owner@nilehome.example}{DrixalDemo123!}
+
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Sign in and select \textbf{Nile Home Care}.
+  \item Open the company profile (\texttt{/company-admin/company}); verify the status badge is \texttt{PENDING} and the guidance explains that the company cannot publish until approved.
+  \item Verify Nile Home Care does not appear in the public marketplace.
+  \item Return to the Personal workspace and confirm the customer pages remain accessible.
+\end{enumerate}
+
+% ============================================================
+\section{Flow: Registration and Company Onboarding}
+\label{sec:flow-registration}
+
+\account{New account (created during the flow)}{your-email@example.com}{choose-a-strong-password}
+
+\subsection{1. Register an account}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/auth/register}.
+  \item Create an account with name, email, and password (min.\ 8 characters; confirm password).
+  \item You land in the Personal workspace.
+\end{enumerate}
+
+\subsection{2. Submit a provider application}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Open \texttt{/register/company}.
+  \item Enter company name, slug, city, area, and description; submit.
+  \item Verify the success screen with a \texttt{PENDING} badge and the "next steps" guidance.
+  \item Sign out and sign in as the Super Admin (\texttt{admin@drixal.example}); approve the new company from \texttt{/super-admin/companies}.
+  \item Sign back in as the new owner; verify the company status is now \texttt{APPROVED} and the company can publish services.
+\end{enumerate}
+
+% ============================================================
+\section{Role Permissions Checklist}
+\label{sec:permissions}
+
+\begin{longtable}{@{}L{5cm}L{5.4cm}L{4cm}@{}}
+  \toprule
+  \textbf{Capability} & \textbf{Allowed for} & \textbf{Denied for} \\
+  \midrule
+  \endhead
+  Manage / publish services & OWNER, ADMIN, MANAGER & TECHNICIAN, VIEWER \\
+  Read services & All company roles & --- \\
+  Decide requests (approve/reject) & OWNER, ADMIN, MANAGER & TECHNICIAN, VIEWER \\
+  Convert requests to orders & OWNER, ADMIN, MANAGER & TECHNICIAN, VIEWER \\
+  Manage orders \& service lines & OWNER, ADMIN, MANAGER & TECHNICIAN, VIEWER \\
+  Read orders & All company roles & --- \\
+  Manage / read customers & All company roles & --- \\
+  Review companies & SUPER\_ADMIN & All others \\
+  Platform workspace & SUPER\_ADMIN & All others \\
+  \bottomrule
+\end{longtable}
+
+% ============================================================
+\section{Acceptance Checklist}
+\label{sec:acceptance}
+
+Use this checklist to sign off a test run.
+
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item Public marketplace works without login and lists only eligible services.
+  \item Sign in, sign out, and workspace switching work for all roles.
+  \item The customer can submit a request and track requests and orders privately.
+  \item The manager can create/edit/publish/unpublish services and see the marketplace change.
+  \item The manager can approve, reject, and convert requests.
+  \item Orders support service lines, assignments, and scheduling.
+  \item The technician sees only read-only operational views.
+  \item The viewer has read-only access everywhere.
+  \item The super admin can approve, reject, suspend, and reactivate companies, and the marketplace reacts accordingly.
+  \item A new company starts \texttt{PENDING} and cannot publish until approved.
+  \item Tenant isolation holds: no cross-company data leaks.
+  \item All pages show loading, error, and empty states appropriately.
+  \item The UI is usable in English LTR and Arabic RTL, and at desktop and mobile widths.
+  \item Re-running \texttt{npm run seed} restores the demo database.
+\end{enumerate}
+
+% ============================================================
+\section{Useful API Endpoints (for automated checks)}
+\label{sec:api}
+
+\begin{longtable}{@{}L{6.4cm}L{8.2cm}@{}}
+  \toprule
+  \textbf{Endpoint} & \textbf{Purpose} \\
+  \midrule
+  \endhead
+  \texttt{POST /api/auth/login} & Sign in (returns session cookie) \\
+  \texttt{POST /api/auth/register} & Create a user account \\
+  \texttt{POST /api/auth/logout} & Sign out \\
+  \texttt{GET  /api/auth/session} & Current session DTO (workspace, role, permissions) \\
+  \texttt{POST /api/auth/workspace} & Switch Personal / Company / Platform workspace \\
+  \texttt{GET  /api/marketplace/services} & Public, filterable service listing \\
+  \texttt{GET  /api/marketplace/cities} & City facet list \\
+  \texttt{GET  /api/categories} & Service categories \\
+  \texttt{GET  /api/services} & Company service list (tenant-scoped) \\
+  \texttt{POST /api/services} & Create a service \\
+  \texttt{PATCH /api/services/:id} & Edit a service \\
+  \texttt{POST /api/services/:id/publish} & Publish a service \\
+  \texttt{POST /api/services/:id/unpublish} & Unpublish a service \\
+  \texttt{GET  /api/service-requests} & Company request inbox (tenant-scoped) \\
+  \texttt{POST /api/service-requests/:id/approve} & Approve a request \\
+  \texttt{POST /api/service-requests/:id/reject} & Reject a request \\
+  \texttt{POST /api/service-requests/:id/convert} & Convert an approved request to an order \\
+  \texttt{GET  /api/service-orders} & Company order list (tenant-scoped) \\
+  \texttt{POST /api/service-orders} & Create a service order \\
+  \texttt{GET  /api/service-orders/:id} & Order detail with lines \\
+  \texttt{PATCH /api/service-orders/:id} & Update order (assignment, status) \\
+  \texttt{POST /api/service-orders/:id/lines} & Add a service line \\
+  \texttt{PATCH /api/service-orders/:id/lines/:lineId} & Update a line (assignment, status) \\
+  \texttt{GET  /api/customers} & Company customer directory (tenant-scoped) \\
+  \texttt{GET  /api/customer/requests} & Customer's own requests (Personal) \\
+  \texttt{GET  /api/customer/orders} & Customer's own orders (Personal) \\
+  \texttt{GET  /api/admin/companies} & Super Admin company list \\
+  \texttt{PATCH /api/admin/companies/:id} & Approve / reject / suspend / reactivate \\
+  \texttt{POST /api/companies/register} & Submit a provider application \\
+  \texttt{GET  /api/companies/current} & Current company profile \\
+  \texttt{GET  /api/company/members} & Company members (for assignment) \\
+  \bottomrule
+\end{longtable}
+
+\end{document}

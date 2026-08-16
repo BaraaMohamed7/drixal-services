@@ -1,0 +1,502 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathpazo}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+
+\definecolor{drixalblue}{HTML}{2546F0}
+\definecolor{drixalink}{HTML}{172B4D}
+\definecolor{drixalmuted}{HTML}{626F86}
+\definecolor{drixalsurface}{HTML}{F7F8F9}
+\definecolor{drixalborder}{HTML}{DCDFE4}
+\definecolor{codebg}{HTML}{F1F2F4}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=drixalblue,
+  urlcolor=drixalblue,
+  pdftitle={Drixal Service Platform -- Functional Specifications},
+  pdfauthor={Drixal Engineering}
+}
+
+\titleformat{\section}{\Large\bfseries\color{drixalblue}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{drixalink}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{drixalink}}{\thesubsubsection}{0.6em}{}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\lstdefinestyle{drixal}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{drixalborder},
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=8pt,
+  belowskip=8pt,
+}
+
+\newtcolorbox{notebox}{
+  colback=drixalsurface,
+  colframe=drixalblue,
+  boxrule=0.8pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt,
+  breakable,
+}
+
+\newtcolorbox{definitionbox}[1]{
+  colback=drixalsurface,
+  colframe=drixalmuted,
+  boxrule=0.6pt,
+  title={\textcolor{drixalink}{\textbf{#1}}},
+  fonttitle=\small,
+  left=8pt, right=8pt, top=6pt, bottom=6pt,
+  breakable,
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{drixalmuted}{Drixal Service Platform}}
+\fancyhead[R]{\small\textcolor{drixalmuted}{Functional \& Technical Specification}}
+\fancyfoot[C]{\small\thepage}
+
+\begin{document}
+
+% ============================================================
+% TITLE PAGE
+% ============================================================
+\begin{titlepage}
+  \centering
+  \vspace*{2.2cm}
+  {\Huge\bfseries\color{drixalblue} Drixal Service Platform}\\[0.6cm]
+  {\Large\bfseries Product, Functional and Technical Specification}\\[1.0cm]
+  {\large\color{drixalmuted} Everything the product owner needs to know about the current platform}\\[0.4cm]
+  {\large\color{drixalmuted} Version 1.0 --- August 2026}\\[2cm]
+  \begin{notebox}
+    \textbf{Purpose:} this document describes what Drixal does today, how it is organised, which roles and workflows exist, what the underlying rules and status lifecycles are, and what security and UX guarantees it provides. It is written for the product owner, but also serves developers, QA, and business stakeholders.
+  \end{notebox}
+  \vfill
+  {\small\color{drixalmuted} Companion document: \emph{Test Credentials and Flow Testing Guide} (docs/test-guide.pdf).}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+% ============================================================
+\section{Executive Summary}
+\label{sec:summary}
+
+\textbf{Drixal} is a multi-tenant service-management platform that connects service discovery, customer requests, provider review, order conversion, assignment, scheduling, and customer tracking in one role-aware workflow.
+
+The product is delivered as a modern web application (Nuxt~4, TypeScript, MongoDB). It currently serves four role families:
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item \textbf{Super Administrators} govern provider-company approval and account status.
+  \item \textbf{Company managers} run daily service operations: requests, orders, schedules, customers, services, and team workload.
+  \item \textbf{Company employees} (technicians and viewers) review assigned work and coordinate delivery.
+  \item \textbf{Customers} discover services, submit requests, and track their own requests and orders in a private \emph{Personal} workspace.
+\end{itemize}
+
+Success for every role means: understand the current operational state and complete the next task with minimal navigation and ambiguity.
+
+% ============================================================
+\section{Product Positioning and Operating Context}
+\label{sec:positioning}
+
+\begin{definitionbox}{Positioning}
+  Drixal carries a service request from public discovery through tenant-controlled approval, conversion, assignment, and private customer tracking in one role-aware workflow.
+\end{definitionbox}
+
+The primary operating scene is a company manager repeatedly scanning new demand, active work, schedule pressure, customer context, and exceptions throughout the workday. Structured lists, tables, statuses, filters, and contextual actions are the core working materials. The public marketplace and authentication surfaces support entry into this operational system.
+
+\subsection{Key product principles}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item The next operational decision matters more than decorative metrics.
+  \item Role clarity, tenant boundaries, and trustworthy status communication are preserved.
+  \item Structured business data stays scannable; actions stay contextual.
+  \item Arabic (RTL) and English (LTR) are equally complete --- neither is a fallback.
+  \item Simple, consistent workflows are preferred over feature-shaped visual novelty.
+\end{enumerate}
+
+% ============================================================
+\section{Roles, Workspaces, and Access}
+\label{sec:roles}
+
+The platform uses a single global identity model (\texttt{User}). Company authorization is \textbf{contextual}: a user may hold a different role in each company and can hold no company membership at all (a pure customer).
+
+\begin{longtable}{@{}L{3.6cm}L{3.6cm}L{7.6cm}@{}}
+  \toprule
+  \textbf{Workspace} & \textbf{Landing route} & \textbf{Who uses it} \\
+  \midrule
+  \endhead
+  Personal & \texttt{/customer} & Every user: requests, orders, marketplace, company creation \\
+  Company Administration & \texttt{/company-admin} & OWNER, ADMIN, MANAGER roles of the selected company \\
+  Employee & \texttt{/employee} & TECHNICIAN, VIEWER roles of the selected company \\
+  Platform Administration & \texttt{/super-admin} & Users with the SUPER\_ADMIN platform role \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Company roles and permissions}
+\label{sec:permissions}
+
+\begin{longtable}{@{}L{3.2cm}L{11.2cm}@{}}
+  \toprule
+  \textbf{Role} & \textbf{Permissions within the selected company} \\
+  \midrule
+  \endhead
+  OWNER & Full company permission set: read company, manage/publish services, decide and convert requests, read/manage customers, read/manage orders \\
+  ADMIN & Same full company permission set as OWNER \\
+  MANAGER & Same full company permission set as OWNER/ADMIN \\
+  TECHNICIAN & Read company, read orders (read-only operational views) \\
+  VIEWER & Read company, read services, read requests, read customers, read orders (read-only everywhere) \\
+  \bottomrule
+\end{longtable}
+
+Platform-level permissions are independent of company memberships:
+
+\begin{longtable}{@{}L{4cm}L{10.4cm}@{}}
+  \toprule
+  \textbf{Platform role} & \textbf{Platform permission} \\
+  \midrule
+  \endhead
+  USER & None (can still hold company memberships) \\
+  SUPER\_ADMIN & Review companies (approve, reject, suspend, reactivate) \\
+  \bottomrule
+\end{longtable}
+
+\begin{notebox}
+  Permissions are enforced on the \textbf{server}. Hiding a button in the UI is never the only safeguard. Every protected endpoint checks authentication, active membership, role permission, entity ownership, and tenant scope.
+\end{notebox}
+
+% ============================================================
+\section{Functional Modules}
+\label{sec:modules}
+
+\subsection{1. Identity, Authentication, and Workspaces}
+\label{sec:auth}
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Account registration with name, email, and password; passwords are hashed with \textbf{Argon2id}.
+  \item Sign in / sign out with database-backed, HTTP-only cookie sessions.
+  \item Explicit session DTO exposing the current user, active workspace, company, membership, and permission list.
+  \item A workspace switcher lets a user move between \emph{Personal}, each \emph{company} membership, and \emph{Platform Administration}.
+  \item Same-origin mutation protection (CSRF defence) for all non-GET requests.
+  \item Login rate limiting.
+  \item The selected workspace is persisted per session; a stale or removed company membership falls back safely to Personal.
+\end{itemize}
+
+\subsection{2. Public Marketplace}
+\label{sec:marketplace}
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Public, unauthenticated browsing of the marketplace.
+  \item Listing of eligible services only (see publication rules below).
+  \item Search by service name/description, filters by category, city, and price range (min/max).
+  \item Filter state lives in the URL query string (shareable, refresh-safe, back-button friendly).
+  \item Public company profile pages listing the company's published services.
+  \item Public service detail pages showing pricing, duration, location type, scheduling requirement, category, and provider profile.
+  \item Debounced search input; pagination; loading, error, and empty states.
+\end{itemize}
+
+\subsection{3. Service Catalog and Publication Lifecycle}
+\label{sec:catalog}
+
+A \emph{service} belongs to exactly one company (the tenant). Each service carries:
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Name, slug, description.
+  \item Category (platform-managed).
+  \item Pricing: \texttt{FIXED}, \texttt{HOURLY}, or \texttt{CUSTOM} (quote).
+  \item Duration in minutes.
+  \item Location type: \texttt{PROVIDER}, \texttt{CUSTOMER}, \texttt{REMOTE}, \texttt{FLEXIBLE}.
+  \item Scheduling requirement (boolean).
+  \item Operational status: \texttt{ACTIVE} / \texttt{INACTIVE}.
+  \item Publication status: \texttt{DRAFT} / \texttt{PUBLISHED} / \texttt{UNPUBLISHED}.
+\end{itemize}
+
+Manager actions: create, edit, publish, and unpublish. New services start as \texttt{DRAFT} and remain invisible to the public until published.
+
+\subsubsection{Publication rules (enforced server-side)}
+\label{sec:publication-rules}
+
+A service is publicly visible in the marketplace \textbf{only if all} of the following hold:
+
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+  \item \texttt{service.publicationStatus} = \texttt{PUBLISHED}
+  \item \texttt{service.operationalStatus} = \texttt{ACTIVE}
+  \item \texttt{company.status} = \texttt{APPROVED}
+\end{enumerate}
+
+\subsection{4. Service Requests}
+\label{sec:requests}
+
+Customers submit a request against a published service from the public detail page (login required). A request records customer contact details, an optional preferred date, and a message.
+
+Request status lifecycle:
+
+\begin{longtable}{@{}L{3.2cm}L{11.2cm}@{}}
+  \toprule
+  \textbf{Status} & \textbf{Meaning} \\
+  \midrule
+  \endhead
+  NEW & Submitted, awaiting provider review \\
+  UNDER\_REVIEW & Provider is reviewing \\
+  CONTACTED & Provider contacted the customer \\
+  APPROVED & Provider approved; eligible for conversion \\
+  REJECTED & Provider rejected the request \\
+  CONVERTED & Converted into a service order \\
+  CANCELLED & Cancelled (by customer) \\
+  CLOSED & Closed \\
+  \bottomrule
+\end{longtable}
+
+Provider (manager) actions: \textbf{approve}, \textbf{reject} (with confirmation), and \textbf{convert} an approved request into a service order. The server rejects decisions on requests that are no longer decidable and prevents duplicate conversion.
+
+\subsection{5. Service Orders and Service Lines}
+\label{sec:orders}
+
+A service order is the execution container. Orders carry:
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Order number (unique per company, e.g.\ \texttt{SO-1001}), title, description.
+  \item Customer, linked service, optional source request.
+  \item Priority: \texttt{LOW}, \texttt{MEDIUM}, \texttt{HIGH}, \texttt{CRITICAL}.
+  \item Status (see lifecycle below).
+  \item Scheduled date.
+  \item Assigned technician (person name and linked user).
+  \item Embedded \emph{service lines}: title, quantity, assignee, status, cost.
+\end{itemize}
+
+Order status lifecycle:
+
+\begin{longtable}{@{}L{3.2cm}L{11.2cm}@{}}
+  \toprule
+  \textbf{Status} & \textbf{Meaning} \\
+  \midrule
+  \endhead
+  DRAFT & Created, not yet scheduled/assigned \\
+  SCHEDULED & A date has been scheduled \\
+  ASSIGNED & Assigned to a technician \\
+  IN\_PROGRESS & Work has started \\
+  ON\_HOLD & Temporarily blocked/paused \\
+  COMPLETED & Finished \\
+  CANCELLED & Cancelled by a manager \\
+  \bottomrule
+\end{longtable}
+
+Valid transitions (enforced server-side):
+\texttt{DRAFT} $\rightarrow$ \texttt{SCHEDULED}/\texttt{CANCELLED}; \texttt{SCHEDULED} $\rightarrow$ \texttt{ASSIGNED}/\texttt{IN\_PROGRESS}/\texttt{CANCELLED}; \texttt{ASSIGNED} $\rightarrow$ \texttt{IN\_PROGRESS}/\texttt{CANCELLED}; \texttt{IN\_PROGRESS} $\rightarrow$ \texttt{ON\_HOLD}/\texttt{COMPLETED}/\texttt{CANCELLED}; \texttt{ON\_HOLD} $\rightarrow$ \texttt{IN\_PROGRESS}/\texttt{CANCELLED}.
+
+Manager actions: create orders, add service lines, update line assignment/status, assign an order to a company member, and schedule.
+
+\subsection{6. Scheduling and Assignment}
+\label{sec:schedule}
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Schedule views (manager and employee) list active orders with dates, customers, services, assignees, and statuses.
+  \item Assignments can target the order level (a company member) and individual service lines.
+  \item Schedule views filter out \texttt{COMPLETED} and \texttt{CANCELLED} orders.
+\end{itemize}
+
+\subsection{7. Customers Directory}
+\label{sec:customers}
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Company-scoped customer records (name, phone, email, city, status).
+  \item Customers are auto-created/updated from public request submissions (linked to the requesting user where applicable).
+  \item Searchable, paginated directory; unique phone per company.
+  \item A customer is \textbf{not} a company membership --- the concepts are separate.
+\end{itemize}
+
+\subsection{8. Company Onboarding and Approval}
+\label{sec:companies}
+
+Company status lifecycle:
+
+\begin{longtable}{@{}L{3.2cm}L{11.2cm}@{}}
+  \toprule
+  \textbf{Status} & \textbf{Meaning} \\
+  \midrule
+  \endhead
+  PENDING & Registered, awaiting platform review \\
+  APPROVED & Eligible to publish services and appear in the marketplace \\
+  REJECTED & Application rejected \\
+  SUSPENDED & Previously approved but temporarily disabled \\
+  \bottomrule
+\end{longtable}
+
+Valid transitions: \texttt{PENDING} $\rightarrow$ \texttt{APPROVED}/\texttt{REJECTED}; \texttt{APPROVED} $\rightarrow$ \texttt{SUSPENDED}/\texttt{REJECTED}; \texttt{REJECTED} $\rightarrow$ \texttt{APPROVED}; \texttt{SUSPENDED} $\rightarrow$ \texttt{APPROVED}/\texttt{REJECTED}.
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Any user can register a company; an \texttt{OWNER} membership is created immediately and the company starts \texttt{PENDING}.
+  \item Super Admin reviews companies from the platform workspace (search + status filter + pagination).
+  \item Approve, reject (with confirmation), suspend (with confirmation), and reactivate.
+  \item A company that is not \texttt{APPROVED} cannot publish services and does not appear in the marketplace; its own profile screen explains why.
+\end{itemize}
+
+\subsection{9. Dashboards}
+\label{sec:dashboards}
+
+\subsubsection{Customer dashboard}
+Shows the next scheduled service, request/order metrics, recent orders, a request-journey panel, and the user's companies. Quick actions to the marketplace and company creation.
+
+\subsubsection{Company Admin dashboard}
+Shows metrics (services, open requests, active orders, customers), a work-queue table of active orders, and a demand pipeline of request statuses. Quick actions to schedule and service creation.
+
+\subsubsection{Employee dashboard}
+Shows active-order and scheduled-work metrics, a work queue, and a status distribution. Quick action to the schedule.
+
+\subsubsection{Super Admin dashboard}
+Shows platform metrics (total/pending/approved/suspended companies) and a review queue, plus a status distribution panel.
+
+% ============================================================
+\section{User Journeys}
+\label{sec:journeys}
+
+\begin{description}[leftmargin=2em, style=nextline]
+  \item[Customer] Browse $\rightarrow$ service details $\rightarrow$ sign in/register $\rightarrow$ submit request $\rightarrow$ provider review $\rightarrow$ (approved request converts to order) $\rightarrow$ execution $\rightarrow$ completion. The customer tracks requests and orders in the Personal workspace.
+  \item[Company Manager] Review requests $\rightarrow$ approve or reject $\rightarrow$ convert $\rightarrow$ assign employee $\rightarrow$ schedule $\rightarrow$ monitor $\rightarrow$ close. Also maintains services, customers, and the company profile.
+  \item[Employee] Select company $\rightarrow$ review assigned work $\rightarrow$ execute. Read-only for technicians; fully read-only for viewers.
+  \item[Company Owner] Create company $\rightarrow$ await approval $\rightarrow$ configure services $\rightarrow$ publish $\rightarrow$ operate. Creating another company remains available from Personal even when the user already has memberships.
+  \item[Super Admin] Review company context $\rightarrow$ approve, reject, suspend, or reactivate.
+\end{description}
+
+% ============================================================
+\section{Information Architecture and Navigation}
+\label{sec:ia}
+
+\begin{longtable}{@{}L{4.6cm}L{9.8cm}@{}}
+  \toprule
+  \textbf{Context} & \textbf{Navigation items} \\
+  \midrule
+  \endhead
+  Personal & Overview, Requests, Orders, Marketplace, (Create Company) \\
+  Company management & Overview, Requests, Orders, Schedule, Customers, Services, Company \\
+  Employee & Overview, Orders, Schedule \\
+  Platform administration & Overview, Companies \\
+  Public & Marketplace, Sign in, Register \\
+  \bottomrule
+\end{longtable}
+
+Filtering, search, and pagination state are reflected in URLs (e.g.\ \texttt{/company-admin/orders?status=IN\_PROGRESS}).
+
+% ============================================================
+\section{Status and Error UX}
+\label{sec:status-ux}
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Statuses are shown as consistent badges with text labels; color is never the only status signal.
+  \item Loading, error, and empty states are distinct and actionable.
+  \item Destructive actions (reject, suspend, unpublish, cancel) require an explicit confirmation dialog naming the affected entity.
+  \item Buttons prevent duplicate submissions while processing; forms show field-level errors and preserve valid data.
+  \item The UI adapts to desktop, tablet, and mobile; operational tables degrade to readable layouts on narrow screens.
+\end{itemize}
+
+% ============================================================
+\section{Accessibility and Bilingual Support}
+\label{sec:a11y}
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Keyboard navigation, visible focus states, semantic labels, and table headers are required.
+  \item Sufficient contrast and non-color status cues.
+  \item Buttons use button elements; links use links; icon-only controls carry accessible labels.
+  \item Full bidirectional (RTL/LTR) support with the Cairo typeface; hierarchy, icon meaning, and action order are preserved in both directions.
+\end{itemize}
+
+% ============================================================
+\section{Security and Tenant Isolation}
+\label{sec:security}
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Argon2id password hashing; HTTP-only, same-site cookie sessions; 14-day session lifetime with periodic activity updates.
+  \item Same-origin (CSRF) checks on all mutating requests.
+  \item Role-based access control enforced server-side on every protected endpoint.
+  \item Every business document carries \texttt{companyId} and all queries enforce company boundaries.
+  \item Explicit customer DTOs: customers only see their own requests/orders and never internal costs, notes, or identifiers.
+  \item Rate limiting on authentication endpoints.
+  \item Audit logging of significant actions (company decisions, service publication, request conversion, order operations).
+  \item Seed data is for demos only and must never be presented as production business evidence.
+\end{itemize}
+
+% ============================================================
+\section{Technical Overview}
+\label{sec:technical}
+
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item \textbf{Stack:} Nuxt 4, Vue 3, TypeScript, Nitro, Tailwind CSS, Nuxt UI, MongoDB, Mongoose.
+  \item \textbf{Architecture:} modular monolith; standalone-first, integration-ready. The platform runs completely without an external ERP; future integrations are adapter-based.
+  \item \textbf{Data model (current):} users, companies, company memberships, service categories, services, customers, service requests, service orders, auth sessions, audit logs.
+  \item \textbf{Indexing:} tenant-scoped operational indexes (e.g.\ \texttt{\{companyId, status\}}), unique company+slug for services, unique company+phone for customers, unique order numbers, unique membership identity per company.
+  \item \textbf{Validation:} server-side validation on all input; explicit command endpoints rather than unrestricted status mutation.
+  \item \textbf{Quality:} automated CI runs lint, typecheck, unit tests, and production build on every push/PR.
+\end{itemize}
+
+% ============================================================
+\section{Delivery Status and Roadmap}
+\label{sec:roadmap}
+
+\subsection{Implemented today}
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item MongoDB/Mongoose models and seed data.
+  \item Authentication (Argon2id, sessions, registration) and contextual workspaces.
+  \item RBAC and role-aware navigation.
+  \item Company registration, onboarding, and super-admin approval/rejection/suspension/reactivation.
+  \item Service catalog CRUD and publication lifecycle.
+  \item Public marketplace with search/filter/pagination and company/service detail pages.
+  \item Customer requests and the approve/reject/convert lifecycle.
+  \item Service orders with service lines, scheduling, and assignment.
+  \item Customer directory and private customer tracking.
+  \item Four role-specific dashboards.
+  \item Audit logging.
+\end{itemize}
+
+\subsection{Planned (not yet implemented)}
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item Full booking lifecycle with appointment slots.
+  \item Service execution checklists, time tracking, and materials.
+  \item Payments and invoices (invoice/payment kept as separate concepts).
+  \item Notifications and notification preferences.
+  \item Reviews and ratings.
+  \item Company subscriptions (platform subscription plans and payments).
+  \item External integrations (ERP adapter, webhooks, sync).
+\end{itemize}
+
+% ============================================================
+\section{Glossary}
+\label{sec:glossary}
+
+\begin{longtable}{@{}L{4cm}L{10.4cm}@{}}
+  \toprule
+  \textbf{Term} & \textbf{Definition} \\
+  \midrule
+  \endhead
+  Tenant & A company; the boundary for all provider operations and data isolation \\
+  Company & A service provider registered on the platform \\
+  Service & A concrete offering by a company (e.g.\ AC Maintenance) \\
+  Service request & A customer's request for a service, before an order exists \\
+  Service order & The execution container for actual work \\
+  Service line & A line item inside an order (a task or sub-service) \\
+  Publication status & DRAFT / PUBLISHED / UNPUBLISHED visibility of a service \\
+  Operational status & ACTIVE / INACTIVE offering state of a service \\
+  Workspace & A role-based application context (Personal, Company, Platform) \\
+  Personal workspace & The customer-facing context every user owns \\
+  \bottomrule
+\end{longtable}
+
+\end{document}
