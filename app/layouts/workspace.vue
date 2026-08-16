@@ -43,7 +43,11 @@ const navItems = computed(() => ({
     { label: t("common.marketplace"), to: "/marketplace", icon: "i-lucide-store" },
     ...(auth.session.value.user?.platformRole === "SUPER_ADMIN" ? [] : [{ label: t("common.createCompany"), to: "/register/company", icon: "i-lucide-building-2" }]),
   ],
-  marketplace: [],
+  marketplace: [
+    { label: t("common.marketplace"), to: "/marketplace", icon: "i-lucide-store" },
+    ...(auth.session.value.authenticated ? [{ label: t("shell.openWorkspace"), to: auth.workspaceHome.value, icon: "i-lucide-layout-dashboard" }] : []),
+    ...(auth.session.value.user?.platformRole === "SUPER_ADMIN" ? [] : [{ label: t("marketplace.registerCompany"), to: "/register/company", icon: "i-lucide-building-2" }]),
+  ],
 }[workspace.value]));
 
 const workspaceRoot = computed(() => ({ superAdmin: "/super-admin", companyAdmin: "/company-admin", employee: "/employee", customer: "/customer", marketplace: "/marketplace" }[workspace.value]));
@@ -55,12 +59,13 @@ const accountRole = computed(() => {
 });
 const userInitial = computed(() => auth.session.value.user?.name?.trim().charAt(0).toUpperCase() || "D");
 const drawerSide = computed(() => locale.value === "ar" ? "right" : "left");
-const sidebarOpen = ref(!isMarketplace.value);
+const canOpenSidebar = computed(() => !isMarketplace.value || auth.session.value.authenticated);
+const sidebarOpen = ref(canOpenSidebar.value);
 
 watch(() => route.path, () => {
   mobileOpen.value = false;
   profileOpen.value = false;
-  sidebarOpen.value = !route.path.startsWith("/marketplace");
+  sidebarOpen.value = !route.path.startsWith("/marketplace") || auth.session.value.authenticated;
 });
 
 
@@ -135,6 +140,15 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutsideProfil
       <div class="flex min-w-0 flex-1 items-center justify-between">
         <div class="flex min-w-0 items-center">
           <UButton icon="i-lucide-menu" color="neutral" variant="ghost" class="mx-1 lg:hidden" :aria-label="t('shell.openNavigation')" @click="mobileOpen = true" />
+          <UButton
+            v-if="isMarketplace && auth.session.value.authenticated"
+            :icon="sidebarOpen ? 'i-lucide-panel-left-close' : 'i-lucide-panel-left-open'"
+            color="neutral"
+            variant="ghost"
+            class="mx-1 hidden lg:inline-flex"
+            :aria-label="t('shell.openNavigation')"
+            @click="sidebarOpen = !sidebarOpen"
+          />
           <span class="max-w-36 truncate text-xs font-semibold lg:hidden">{{ auth.session.value.company?.name || workspaceTitle }}</span>
           <div class="hidden min-w-0 px-4 lg:block">
             <span class="truncate text-sm font-semibold">{{ workspaceTitle }}</span>
@@ -234,7 +248,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutsideProfil
       variant="outline"
       class="fixed bottom-6 start-6 z-20 lg:hidden"
       :aria-label="t('shell.openNavigation')"
-      @click="sidebarOpen = true"
+      @click="mobileOpen = true"
     />
 
     <UButton
