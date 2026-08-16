@@ -5,7 +5,42 @@ export const serviceOrderStatusValues = ["DRAFT", "SCHEDULED", "ASSIGNED", "IN_P
 export const serviceOrderPriorityValues = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 export const serviceOrderLineStatusValues = ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
 
-export const ServiceOrder = defineMongooseModel({
+export type ServiceOrderStatus = (typeof serviceOrderStatusValues)[number];
+export type ServiceOrderPriority = (typeof serviceOrderPriorityValues)[number];
+export type ServiceOrderLineStatus = (typeof serviceOrderLineStatusValues)[number];
+
+export interface ServiceOrderLineDocument {
+  title: string;
+  quantity: number;
+  assignedTo: string;
+  status: ServiceOrderLineStatus;
+  cost: {
+    amount?: number;
+    currency: string;
+  };
+}
+
+export interface ServiceOrderDocument {
+  _id: mongoose.Types.ObjectId;
+  companyId: mongoose.Types.ObjectId;
+  requestId?: mongoose.Types.ObjectId;
+  customerId: mongoose.Types.ObjectId;
+  customerUserId?: mongoose.Types.ObjectId;
+  serviceId: mongoose.Types.ObjectId;
+  orderNumber: string;
+  title: string;
+  description: string;
+  priority: ServiceOrderPriority;
+  status: ServiceOrderStatus;
+  scheduledDate?: Date;
+  assignedTo: string;
+  assignedUserId?: mongoose.Types.ObjectId;
+  lines: ServiceOrderLineDocument[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const ServiceOrder = defineMongooseModel<ServiceOrderDocument>({
   name: "ServiceOrder",
   schema: {
     companyId: {

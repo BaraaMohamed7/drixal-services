@@ -1,5 +1,8 @@
 import { companyStatusValues, type CompanyStatus } from "../models/company.schema";
 import { slugify } from "./services";
+import { assertCompanyStatusTransition } from "./transitions";
+
+export { assertCompanyStatusTransition };
 
 type RegistrationInput = {
   company?: {

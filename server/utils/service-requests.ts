@@ -1,3 +1,8 @@
+import type { ServiceRequestStatus } from "../models/service-request.schema";
+import { assertRequestDecidable } from "./transitions";
+
+export { assertRequestDecidable };
+
 type RequestInput = {
   customer?: {
     name?: unknown;
@@ -7,6 +12,18 @@ type RequestInput = {
   };
   message?: unknown;
   preferredDate?: unknown;
+};
+
+type ServiceRequestCreateInput = {
+  customer: {
+    name: string;
+    phone: string;
+    email: string;
+    city: string;
+  };
+  message: string;
+  preferredDate?: Date;
+  status: ServiceRequestStatus;
 };
 
 const requiredString = (value: unknown, field: string) => {
@@ -19,7 +36,7 @@ const requiredString = (value: unknown, field: string) => {
 
 const optionalString = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
-export const normalizeCreateServiceRequestInput = (body: RequestInput) => {
+export const normalizeCreateServiceRequestInput = (body: RequestInput): ServiceRequestCreateInput => {
   const customer = body.customer || {};
   const preferredDate = optionalString(body.preferredDate);
 

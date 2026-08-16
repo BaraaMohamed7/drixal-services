@@ -3,8 +3,20 @@ import { defineMongooseModel } from "#nuxt/mongoose";
 export const userStatusValues = ["ACTIVE", "INACTIVE"] as const;
 export const userPlatformRoleValues = ["USER", "SUPER_ADMIN"] as const;
 export type UserPlatformRole = (typeof userPlatformRoleValues)[number];
+export type UserStatus = (typeof userStatusValues)[number];
 
-export const User = defineMongooseModel({
+export interface UserDocument {
+  _id: import("mongoose").Types.ObjectId;
+  name: string;
+  email: string;
+  passwordHash: string;
+  status: UserStatus;
+  platformRole: UserPlatformRole;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const User = defineMongooseModel<UserDocument>({
   name: "User",
   schema: {
     name: {

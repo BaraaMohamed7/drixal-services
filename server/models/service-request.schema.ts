@@ -2,8 +2,28 @@ import { defineMongooseModel } from "#nuxt/mongoose";
 import mongoose from "mongoose";
 
 export const serviceRequestStatusValues = ["NEW", "UNDER_REVIEW", "APPROVED", "REJECTED", "CONVERTED", "CANCELLED", "CONTACTED", "CLOSED"] as const;
+export type ServiceRequestStatus = (typeof serviceRequestStatusValues)[number];
 
-export const ServiceRequest = defineMongooseModel({
+export interface ServiceRequestDocument {
+  _id: mongoose.Types.ObjectId;
+  companyId: mongoose.Types.ObjectId;
+  serviceId: mongoose.Types.ObjectId;
+  customerId?: mongoose.Types.ObjectId;
+  requesterUserId?: mongoose.Types.ObjectId;
+  customer: {
+    name: string;
+    phone: string;
+    email: string;
+    city: string;
+  };
+  message: string;
+  preferredDate?: Date;
+  status: ServiceRequestStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const ServiceRequest = defineMongooseModel<ServiceRequestDocument>({
   name: "ServiceRequest",
   schema: {
     companyId: {

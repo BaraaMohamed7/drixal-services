@@ -1,9 +1,10 @@
-import { duplicateKeyError, getProviderCompany, normalizeCreateServiceInput } from "../../utils/services";
+import { assertCategoryActive, duplicateKeyError, getProviderCompany, normalizeCreateServiceInput } from "../../utils/services";
 
 export default defineEventHandler(async (event) => {
   const company = await getProviderCompany(event, "services.manage");
   const body = await readBody(event);
   const input = normalizeCreateServiceInput(body || {});
+  await assertCategoryActive(input.categoryId);
 
   try {
     const service = await Service.create({

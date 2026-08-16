@@ -25,6 +25,7 @@ const serviceBase = computed(() => route.path.startsWith("/company-admin") ? "/c
 const allOptionValue = "__all__";
 const search = ref(typeof route.query.search === "string" ? route.query.search : "");
 const publicationStatus = ref(typeof route.query.publicationStatus === "string" ? route.query.publicationStatus : allOptionValue);
+const page = ref(typeof route.query.page === "string" ? Math.max(Number(route.query.page) || 1, 1) : 1);
 const refreshKey = ref(0);
 const statusOptions = computed(() => [
   { label: t("common.allStatuses"), value: allOptionValue },
@@ -36,6 +37,7 @@ const statusOptions = computed(() => [
 const query = computed(() => ({
   search: search.value || undefined,
   publicationStatus: publicationStatus.value === allOptionValue ? undefined : publicationStatus.value,
+  page: page.value > 1 ? page.value : undefined,
   refreshKey: refreshKey.value,
 }));
 
@@ -45,13 +47,16 @@ watch(
     publicationStatus: publicationStatus.value === allOptionValue ? undefined : publicationStatus.value,
   }),
   (value) => {
+    page.value = 1;
     router.replace({ query: value });
   },
 );
 
-const { data, pending, error, refresh } = await useFetch<{ items: ServiceItem[] }>("/api/services", { query });
+const { data, pending, error, refresh } = await useFetch<{ items: ServiceItem[]; pagination: { page: number; pages: number; total: number } }>("/api/services", { query });
 
 const services = computed(() => data.value?.items || []);
+const pagination = computed(() => data.value?.pagination || { page: 1, pages: 1, total: 0 });
+const confirm = useConfirm();
 
 const formatPrice = (service: ServiceItem) => {
   if (service.pricing.type === "CUSTOM") return t("pricing.customQuote");
@@ -72,6 +77,13 @@ const publish = async (service: ServiceItem) => {
 };
 
 const unpublish = async (service: ServiceItem) => {
+  const confirmed = await confirm.open({
+    title: t("confirm.unpublishService"),
+    description: t("confirm.unpublishServiceDescription"),
+    cancelLabel: t("confirm.cancel"),
+    confirmLabel: t("confirm.accept"),
+  });
+  if (!confirmed) return;
   await $fetch(`/api/services/${service._id}/unpublish`, { method: "POST" });
   refreshKey.value += 1;
   await refresh();
@@ -119,7 +131,8 @@ const unpublish = async (service: ServiceItem) => {
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>
     <p v-else-if="pending" class="drixal-panel rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("providerServices.loading") }}</p>
 
-    <div v-else-if="services.length" class="table-scroll">
+    <div v-else-if="services.length">
+      <div class="table-scroll">
       <table class="business-table">
         <thead>
           <tr>
@@ -152,6 +165,11 @@ const unpublish = async (service: ServiceItem) => {
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <div class="pt-3">
+        <PaginationBar :page="pagination.page" :pages="pagination.pages" :total="pagination.total" @update-page="page = $event" />
+      </div>
     </div>
 
     <div v-else class="drixal-panel rounded-xl border-dashed p-6 text-center">

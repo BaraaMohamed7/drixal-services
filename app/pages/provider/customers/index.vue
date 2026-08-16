@@ -13,10 +13,15 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useLocale();
 const search = ref(typeof route.query.search === "string" ? route.query.search : "");
-const query = computed(() => ({ search: search.value || undefined }));
-const { data, pending, error } = await useFetch<{ items: CustomerItem[] }>("/api/customers", { query });
+const page = ref(typeof route.query.page === "string" ? Math.max(Number(route.query.page) || 1, 1) : 1);
+const query = computed(() => ({ search: search.value || undefined, page: page.value > 1 ? page.value : undefined }));
+const { data, pending, error } = await useFetch<{ items: CustomerItem[]; pagination: { page: number; pages: number; total: number } }>("/api/customers", { query });
 const customers = computed(() => data.value?.items || []);
+const pagination = computed(() => data.value?.pagination || { page: 1, pages: 1, total: 0 });
 
+watch(search, () => {
+  page.value = 1;
+});
 watch(query, (value) => router.replace({ query: value }), { deep: true });
 </script>
 
@@ -40,7 +45,8 @@ watch(query, (value) => router.replace({ query: value }), { deep: true });
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>
     <p v-else-if="pending" class="drixal-panel rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("customers.loading") }}</p>
 
-    <div v-else-if="customers.length" class="table-scroll">
+    <div v-else-if="customers.length">
+      <div class="table-scroll">
       <table class="business-table">
         <thead>
           <tr>
@@ -61,6 +67,11 @@ watch(query, (value) => router.replace({ query: value }), { deep: true });
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <div class="pt-3">
+        <PaginationBar :page="pagination.page" :pages="pagination.pages" :total="pagination.total" @update-page="page = $event" />
+      </div>
     </div>
 
     <div v-else class="drixal-panel rounded-xl border-dashed p-6 text-center">

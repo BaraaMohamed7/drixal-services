@@ -12,7 +12,7 @@ type MarketplaceService = {
     currency: string;
   };
   duration?: number;
-  locationType: string;
+  locationType: "PROVIDER" | "CUSTOMER" | "REMOTE" | "FLEXIBLE";
   scheduling: {
     required: boolean;
   };
@@ -36,7 +36,8 @@ const route = useRoute();
 const { t } = useLocale();
 const auth = useAuth();
 await auth.load();
-const { data: service, pending, error } = await useFetch<MarketplaceService>(`/api/marketplace/services/${route.params.id}`);
+const servicePath = `/marketplace/companies/${route.params.companySlug}/services/${route.params.serviceSlug}`;
+const { data: service, pending, error } = await useFetch<MarketplaceService>(`/api${servicePath}`);
 const requestPending = ref(false);
 const requestError = ref("");
 const requestSent = ref(false);
@@ -68,7 +69,7 @@ const submitRequest = async () => {
   requestError.value = "";
 
   try {
-    await $fetch(`/api/marketplace/services/${route.params.id}/requests`, {
+    await $fetch(`/api${servicePath}/requests`, {
       method: "POST",
       body: requestForm,
     });
@@ -101,7 +102,7 @@ const submitRequest = async () => {
         <div class="border-b border-[var(--color-brand-border)] bg-[var(--color-brand-subtle)] p-5 md:p-6">
           <div class="mb-4 flex flex-wrap gap-2">
             <span class="drixal-inverted-chip px-3 py-1 text-xs font-bold">{{ service.category.name }}</span>
-            <span class="drixal-inverted-chip px-3 py-1 text-xs font-semibold opacity-80">{{ service.locationType }}</span>
+            <span class="drixal-inverted-chip px-3 py-1 text-xs font-semibold opacity-80">{{ t(`enums.locationType.${service.locationType}`) }}</span>
           </div>
           <h1 class="text-2xl font-semibold leading-8 tracking-tight">{{ service.name }}</h1>
           <p class="mt-3 max-w-2xl text-sm leading-6 text-[var(--drixal-muted)]">{{ service.description }}</p>
@@ -143,7 +144,7 @@ const submitRequest = async () => {
               <UFormField :label="t('common.email')"><UInput v-model="requestForm.customer.email" type="email" autocomplete="email" class="min-w-0 w-full" :placeholder="t('requestForm.emailPlaceholder')" /></UFormField>
               <UFormField :label="t('common.city')"><UInput v-model="requestForm.customer.city" autocomplete="address-level2" class="min-w-0 w-full" :placeholder="t('requestForm.cityPlaceholder')" /></UFormField>
             </div>
-            <UFormField :label="t('requestForm.preferredDate')"><UInput v-model="requestForm.preferredDate" type="date" class="w-full" /></UFormField>
+            <UFormField v-if="service.scheduling.required" :label="t('requestForm.preferredDate')"><UInput v-model="requestForm.preferredDate" type="date" class="w-full" /></UFormField>
             <UFormField :label="t('requestForm.message')" required><UTextarea v-model="requestForm.message" required :rows="3" class="min-w-0 w-full" :placeholder="t('requestForm.messagePlaceholder')" /></UFormField>
             <div class="flex justify-end"><UButton type="submit" :loading="requestPending" :disabled="requestPending" :label="t('requestForm.submit')" /></div>
           </form>
@@ -152,7 +153,7 @@ const submitRequest = async () => {
 
       <aside class="drixal-panel h-fit min-w-0 p-5">
         <p class="drixal-muted text-xs font-bold">{{ t("serviceDetail.provider") }}</p>
-        <h2 class="mt-3 text-2xl font-bold tracking-tight">{{ service.company.name }}</h2>
+        <NuxtLink :to="`/marketplace/companies/${service.company.slug}`" class="mt-3 block text-2xl font-bold tracking-tight text-[var(--drixal-blue)] hover:underline">{{ service.company.name }}</NuxtLink>
         <p class="drixal-muted mt-3 leading-7">{{ service.company.description || t("serviceDetail.providerFallback") }}</p>
 
         <div class="mt-6 grid gap-3 text-sm font-bold text-[var(--drixal-ink)]">

@@ -3,10 +3,11 @@ import argon2 from "argon2";
 import type { H3Event } from "h3";
 import { deleteCookie, getCookie, getHeader, getMethod, getRequestURL, setCookie } from "h3";
 import { AuthSession } from "../models/auth-session.schema";
-import { Company } from "../models/company.schema";
+import { Company, type CompanyDocument } from "../models/company.schema";
 import { CompanyMembership } from "../models/company-membership.schema";
 import { User } from "../models/user.schema";
 import { getPermissionsForPlatformRole, getPermissionsForRole } from "./permissions";
+import type { Types } from "mongoose";
 
 const sessionDuration = 60 * 60 * 24 * 14;
 const cookieName = process.env.NODE_ENV === "production" ? "__Host-drixal.sid" : "drixal.sid";
@@ -44,7 +45,7 @@ export const assertSameOrigin = (event: H3Event) => {
   }
 };
 
-export const createAuthSession = async (event: H3Event, userId: unknown) => {
+export const createAuthSession = async (event: H3Event, userId: string | Types.ObjectId) => {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + sessionDuration * 1000);
   await AuthSession.create({ tokenHash: hashToken(token), userId, expiresAt, lastSeenAt: new Date() });
@@ -82,7 +83,7 @@ export const getAuthContext = async (event: H3Event) => {
 
   const memberships = await CompanyMembership.find({ userId: user._id, status: "ACTIVE" })
     .sort({ createdAt: 1 })
-    .populate({ path: "companyId", model: Company });
+    .populate<{ companyId: CompanyDocument }>({ path: "companyId", model: Company });
   const membership = authSession.activeWorkspaceType === "COMPANY" && authSession.activeCompanyId
     ? memberships.find((item) => String(item.companyId?._id || item.companyId) === String(authSession.activeCompanyId)) || null
     : null;

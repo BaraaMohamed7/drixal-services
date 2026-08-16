@@ -1,6 +1,7 @@
 import { CompanyMembership } from "../../models/company-membership.schema";
 import { isDuplicateKeyError, normalizeCompanyRegistrationInput } from "../../utils/companies";
 import { requireUser } from "../../utils/auth";
+import { writeAuditLog } from "../../utils/audit";
 
 export default defineEventHandler(async (event) => {
   const session = await requireUser(event);
@@ -29,6 +30,12 @@ export default defineEventHandler(async (event) => {
   }
 
   setResponseStatus(event, 201);
+  await writeAuditLog(event, {
+    targetType: "COMPANY",
+    targetId: company._id,
+    action: "CREATE",
+    summary: `Registered company "${company.name}"`,
+  });
   return {
     company: {
       _id: company._id,

@@ -1569,7 +1569,7 @@ company.status = APPROVED
 ---
 
 ```http
-GET /api/marketplace/services/:id
+GET /api/marketplace/companies/:companySlug/services/:serviceSlug
 ```
 
 Return:
@@ -1580,6 +1580,8 @@ Return:
 - Duration.
 - Location type.
 - Scheduling requirement.
+
+Public detail and request endpoints are scoped to both the company slug and the service slug because service slugs are unique only per company.
 
 ---
 
@@ -1594,7 +1596,7 @@ Return:
 
 /marketplace
 
-/marketplace/services/:id
+/marketplace/companies/:companySlug/services/:serviceSlug
 ```
 
 ---

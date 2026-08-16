@@ -7,8 +7,13 @@ const objectIdString = (value: unknown) => {
 
 const asRecord = (value: unknown): PopulatedRecord => (value && typeof value === "object" ? (value as PopulatedRecord) : {});
 
+const toObject = (value: unknown): unknown =>
+  typeof value === "object" && value !== null && typeof (value as { toObject?: unknown }).toObject === "function"
+    ? (value as { toObject: () => unknown }).toObject()
+    : value;
+
 export const mapMarketplaceService = (service: unknown) => {
-  const record = asRecord(typeof service === "object" && service !== null && "toObject" in service ? service.toObject() : service);
+  const record = asRecord(toObject(service));
   const company = asRecord(record.companyId);
   const category = asRecord(record.categoryId);
   const pricing = asRecord(record.pricing);

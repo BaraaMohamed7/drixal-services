@@ -7,7 +7,20 @@ export default defineEventHandler(async (event) => {
 
   if (typeof query.status === "string" && query.status) filter.status = query.status;
 
-  const items = await ServiceRequest.find(filter).populate("serviceId").sort({ createdAt: -1 }).limit(100);
+  const page = Math.max(Number(query.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 100);
 
-  return { items };
+  const [items, total] = await Promise.all([
+    ServiceRequest.find(filter)
+      .populate("serviceId")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    ServiceRequest.countDocuments(filter),
+  ]);
+
+  return {
+    items,
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+  };
 });

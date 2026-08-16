@@ -14,7 +14,9 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 <template>
   <DesignContract />
   <NuxtRouteAnnouncer />
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <UApp>
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </UApp>
 </template>

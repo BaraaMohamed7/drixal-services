@@ -1,5 +1,5 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
-import mongoose, { type InferSchemaType } from "mongoose";
+import mongoose from "mongoose";
 
 export const pricingTypeValues = ["FIXED", "HOURLY", "CUSTOM"] as const;
 export const locationTypeValues = ["PROVIDER", "CUSTOMER", "REMOTE", "FLEXIBLE"] as const;
@@ -11,7 +11,30 @@ export type LocationType = (typeof locationTypeValues)[number];
 export type OperationalStatus = (typeof operationalStatusValues)[number];
 export type PublicationStatus = (typeof publicationStatusValues)[number];
 
-export const Service = defineMongooseModel({
+export interface ServiceDocument {
+  _id: mongoose.Types.ObjectId;
+  companyId: mongoose.Types.ObjectId;
+  categoryId: mongoose.Types.ObjectId;
+  name: string;
+  slug: string;
+  description: string;
+  pricing: {
+    type: PricingType;
+    amount?: number;
+    currency: string;
+  };
+  duration?: number;
+  locationType: LocationType;
+  scheduling: {
+    required: boolean;
+  };
+  operationalStatus: OperationalStatus;
+  publicationStatus: PublicationStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const Service = defineMongooseModel<ServiceDocument>({
   name: "Service",
   schema: {
     companyId: {
@@ -95,5 +118,3 @@ export const Service = defineMongooseModel({
     schema.index({ name: "text", description: "text" });
   },
 });
-
-export type ServiceDocument = InferSchemaType<typeof Service.schema>;

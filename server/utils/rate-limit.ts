@@ -24,7 +24,7 @@ export const enforceRateLimit = (event: H3Event, scope: string, limit: number, w
   }
 
   if (entry.count > limit) {
-    setResponseHeader(event, "retry-after", String(Math.ceil((entry.resetAt - now) / 1000)));
+    setResponseHeader(event, "retry-after", Math.ceil((entry.resetAt - now) / 1000));
     throw createError({ statusCode: 429, statusMessage: "Too many attempts. Try again later." });
   }
 };

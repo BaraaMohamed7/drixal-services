@@ -18,7 +18,7 @@ type MarketplaceService = {
     currency: string;
   };
   duration?: number;
-  locationType: string;
+  locationType: "PROVIDER" | "CUSTOMER" | "REMOTE" | "FLEXIBLE";
   scheduling: {
     required: boolean;
   };
@@ -37,6 +37,8 @@ type MarketplaceService = {
   };
 };
 
+type Pagination = { page: number; pages: number; total: number };
+
 const route = useRoute();
 const router = useRouter();
 const { t } = useLocale();
@@ -44,8 +46,18 @@ const auth = useAuth();
 await auth.load();
 const allOptionValue = "__all__";
 
+const searchInput = ref(typeof route.query.search === "string" ? route.query.search : "");
+const search = ref(searchInput.value);
+const page = ref(typeof route.query.page === "string" ? Math.max(Number(route.query.page) || 1, 1) : 1);
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
+watch(searchInput, (value) => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    search.value = value;
+  }, 350);
+});
+
 const filters = reactive({
-  search: typeof route.query.search === "string" ? route.query.search : "",
   category: typeof route.query.category === "string" ? route.query.category : allOptionValue,
   city: typeof route.query.city === "string" ? route.query.city : allOptionValue,
   minPrice: typeof route.query.minPrice === "string" ? route.query.minPrice : "",
@@ -53,11 +65,12 @@ const filters = reactive({
 });
 
 const query = computed(() => ({
-  search: filters.search || undefined,
+  search: search.value || undefined,
   category: filters.category === allOptionValue ? undefined : filters.category,
   city: filters.city === allOptionValue ? undefined : filters.city,
   minPrice: filters.minPrice || undefined,
   maxPrice: filters.maxPrice || undefined,
+  page: page.value > 1 ? page.value : undefined,
 }));
 
 watch(
@@ -68,15 +81,21 @@ watch(
   { deep: true },
 );
 
-const [{ data: categoriesData }, { data, pending, error }] = await Promise.all([
+watch([() => filters.category, () => filters.city, () => filters.minPrice, () => filters.maxPrice, search], () => {
+  page.value = 1;
+});
+
+const [{ data: categoriesData }, citiesFetch, { data, pending, error }] = await Promise.all([
   useFetch<{ items: Category[] }>("/api/categories"),
-  useFetch<{ items: MarketplaceService[]; pagination: { total: number } }>("/api/marketplace/services", { query }),
+  useFetch<{ items: string[] }>("/api/marketplace/cities"),
+  useFetch<{ items: MarketplaceService[]; pagination: Pagination }>("/api/marketplace/services", { query }),
 ]);
 
 const categories = computed(() => categoriesData.value?.items || []);
 const services = computed(() => data.value?.items || []);
-const total = computed(() => data.value?.pagination.total || 0);
-const cities = computed(() => Array.from(new Set(services.value.map((service) => service.company.location.city).filter(Boolean))));
+const pagination = computed(() => data.value?.pagination || { page: 1, pages: 1, total: 0 });
+const total = computed(() => pagination.value.total);
+const cities = computed(() => citiesFetch.data.value?.items || []);
 const categoryOptions = computed(() => [{ name: t("common.allCategories"), slug: allOptionValue }, ...categories.value]);
 const cityOptions = computed(() => [{ label: t("common.city"), value: allOptionValue }, ...cities.value.map((city) => ({ label: city, value: city }))]);
 
@@ -87,11 +106,12 @@ const formatPrice = (service: MarketplaceService) => {
 };
 
 const resetFilters = () => {
-  filters.search = "";
+  searchInput.value = "";
   filters.category = allOptionValue;
   filters.city = allOptionValue;
   filters.minPrice = "";
   filters.maxPrice = "";
+  page.value = 1;
 };
 </script>
 
@@ -106,7 +126,7 @@ const resetFilters = () => {
     </header>
 
     <div class="operation-panel grid max-w-full items-end gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,0.7fr)_auto]">
-      <UFormField :label="t('marketplace.searchLabel')"><UInput v-model="filters.search" class="min-w-0 w-full" :placeholder="t('marketplace.searchPlaceholder')" /></UFormField>
+      <UFormField :label="t('marketplace.searchLabel')"><UInput v-model="searchInput" class="min-w-0 w-full" :placeholder="t('marketplace.searchPlaceholder')" /></UFormField>
       <UFormField :label="t('common.category')"><USelect v-model="filters.category" :items="categoryOptions" label-key="name" value-key="slug" class="min-w-0 w-full" /></UFormField>
       <UFormField :label="t('common.city')"><USelect v-model="filters.city" :items="cityOptions" label-key="label" value-key="value" class="min-w-0 w-full" /></UFormField>
       <UFormField :label="t('marketplace.minPrice')"><UInput v-model="filters.minPrice" type="number" min="0" class="min-w-0 w-full" /></UFormField>
@@ -124,18 +144,18 @@ const resetFilters = () => {
 
     <template v-else-if="services.length">
       <div class="grid gap-3 sm:hidden">
-        <NuxtLink v-for="service in services" :key="service.id" :to="`/marketplace/services/${service.slug}`" class="drixal-panel block p-4 transition-colors hover:bg-[var(--drixal-hover)]">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <h2 class="truncate font-bold">{{ service.name }}</h2>
-              <p class="mt-1 truncate text-xs text-[var(--drixal-muted)]">{{ service.company.name }}</p>
+        <NuxtLink v-for="service in services" :key="service.id" :to="`/marketplace/companies/${service.company.slug}/services/${service.slug}`" class="drixal-panel block p-4 transition-colors hover:bg-[var(--drixal-hover)]">
+<div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h2 class="truncate font-bold">{{ service.name }}</h2>
+                <NuxtLink :to="`/marketplace/companies/${service.company.slug}`" class="mt-1 block truncate text-xs font-semibold text-[var(--drixal-blue)] hover:underline">{{ service.company.name }}</NuxtLink>
+              </div>
+              <UBadge :label="service.category.name" color="primary" variant="soft" />
             </div>
-            <UBadge :label="service.category.name" color="primary" variant="soft" />
-          </div>
-          <p class="mt-3 line-clamp-2 text-sm leading-5 text-[var(--drixal-muted)]">{{ service.description }}</p>
-          <div class="mt-4 flex items-end justify-between gap-4 border-t border-[var(--drixal-line)] pt-3">
-            <div class="text-xs text-[var(--drixal-muted)]">
-              <p>{{ service.company.location.city || t("serviceDetail.flexible") }} · {{ service.locationType }}</p>
+            <p class="mt-3 line-clamp-2 text-sm leading-5 text-[var(--drixal-muted)]">{{ service.description }}</p>
+            <div class="mt-4 flex items-end justify-between gap-4 border-t border-[var(--drixal-line)] pt-3">
+              <div class="text-xs text-[var(--drixal-muted)]">
+                <p>{{ service.company.location.city || t("serviceDetail.flexible") }} · {{ t(`enums.locationType.${service.locationType}`) }}</p>
               <p class="mt-1 text-sm font-bold text-[var(--drixal-ink)]">{{ formatPrice(service) }}</p>
             </div>
             <span class="inline-flex items-center gap-1 text-sm font-bold text-[var(--drixal-blue)]">{{ t("marketplace.viewService") }} <UIcon name="i-lucide-arrow-right" class="size-4 rtl:rotate-180" /></span>
@@ -158,20 +178,24 @@ const resetFilters = () => {
         <tbody>
           <tr v-for="service in services" :key="service.id">
             <td>
-              <NuxtLink :to="`/marketplace/services/${service.slug}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ service.name }}</NuxtLink>
+              <NuxtLink :to="`/marketplace/companies/${service.company.slug}/services/${service.slug}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ service.name }}</NuxtLink>
               <div class="drixal-muted mt-1 max-w-md truncate text-xs">{{ service.description }}</div>
             </td>
             <td>
-              <div class="font-semibold">{{ service.company.name }}</div>
+              <NuxtLink :to="`/marketplace/companies/${service.company.slug}`" class="font-semibold text-[var(--drixal-blue)] hover:underline">{{ service.company.name }}</NuxtLink>
               <div class="drixal-muted text-xs">{{ service.company.location.area }}{{ service.company.location.area && service.company.location.city ? ", " : "" }}{{ service.company.location.city }}</div>
             </td>
             <td><UBadge :label="service.category.name" color="primary" variant="soft" /></td>
-            <td>{{ service.locationType }}</td>
+            <td>{{ t(`enums.locationType.${service.locationType}`) }}</td>
             <td>{{ formatPrice(service) }}</td>
-            <td><UButton :to="`/marketplace/services/${service.slug}`" :label="t('marketplace.viewService')" size="sm" /></td>
+            <td><UButton :to="`/marketplace/companies/${service.company.slug}/services/${service.slug}`" :label="t('marketplace.viewService')" size="sm" /></td>
           </tr>
         </tbody>
         </table>
+      </div>
+
+      <div class="hidden sm:block">
+        <PaginationBar :page="pagination.page" :pages="pagination.pages" :total="pagination.total" @update-page="page = $event" />
       </div>
     </template>
 

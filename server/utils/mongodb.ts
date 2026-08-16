@@ -4,8 +4,10 @@ export const isValidObjectId = (id?: string) => Boolean(id && mongoose.Types.Obj
 
 export const toObjectId = (id: string) => new mongoose.Types.ObjectId(id);
 
+export const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export const getObjectIdOrThrow = (id?: string) => {
-  if (!isValidObjectId(id)) {
+  if (!id || !isValidObjectId(id)) {
     throw createError({
       statusCode: 400,
       statusMessage: "Invalid service id",

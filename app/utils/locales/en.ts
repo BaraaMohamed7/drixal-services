@@ -29,6 +29,7 @@ export const en = {
     phone: "Phone",
     email: "Email",
     assignedTo: "Assigned To",
+    unassigned: "Unassigned",
     scheduledDate: "Scheduled Date",
     order: "Order",
     actions: "Actions",
@@ -62,6 +63,10 @@ export const en = {
     viewAll: "View all",
     createCompany: "Create company",
     cancel: "Cancel",
+    previous: "Previous",
+    next: "Next",
+    page: "Page",
+    showingResults: "Showing {from}-{to} of {total}",
   },
   statuses: {
     DRAFT: "Draft",
@@ -91,6 +96,14 @@ export const en = {
     customQuote: "Custom quote",
     startsAt: "Starts at",
     hourlySuffix: "/hour",
+  },
+  enums: {
+    locationType: {
+      PROVIDER: "Provider location",
+      CUSTOMER: "Customer location",
+      REMOTE: "Remote",
+      FLEXIBLE: "Flexible",
+    },
   },
   shell: {
     brandMark: "DX",
@@ -183,6 +196,33 @@ export const en = {
     noResultsDescription: "Try a broader search, another category, or remove the price range.",
     clearFilters: "Clear Filters",
     viewService: "View Service",
+    viewCompany: "View provider",
+  },
+  confirm: {
+    title: "Confirm action",
+    unpublishService: "Unpublish this service?",
+    unpublishServiceDescription: "The service will no longer appear in the public marketplace.",
+    rejectRequest: "Reject this request?",
+    rejectRequestDescription: "The customer will see the request as rejected.",
+    cancelOrder: "Cancel this order?",
+    cancelOrderDescription: "The order and its scheduled work will be cancelled.",
+    suspendCompany: "Suspend this company?",
+    suspendCompanyDescription: "Marketplace visibility and new publishing will be suspended.",
+    rejectCompany: "Reject this company?",
+    rejectCompanyDescription: "The company will not be eligible for the marketplace.",
+    accept: "Confirm",
+    cancel: "Cancel",
+  },
+  companyPublic: {
+    eyebrow: "Provider profile",
+    description: "Approved service provider on Drixal Services.",
+    servicesTitle: "Published services",
+    servicesDescription: "Active services currently available from this provider.",
+    noServices: "No published services yet",
+    noServicesDescription: "This provider has not published any active services.",
+    viewService: "View service",
+    loading: "Loading provider profile...",
+    notFound: "Provider not found",
   },
   serviceDetail: {
     pricing: "Pricing",
@@ -411,4 +451,4 @@ export const en = {
   demoFlow: {
     title: "Demo Flow",
   },
-} as const;
+};

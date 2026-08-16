@@ -7,6 +7,9 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "typecheck": "tsc --build --pretty false --noEmit",
+    "lint": "eslint app server tests \"*.ts\" \"*.mjs\" --no-cache",
+    "test": "vitest run",
     "seed": "node scripts/seed.mjs",
     "migrate:auth": "node scripts/migrate-auth.mjs",
     "migrate:workspaces": "node scripts/migrate-workspaces.mjs",
@@ -29,6 +32,7 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
-    "@types/node": "^26.2.0"
+    "@types/node": "^26.2.0",
+    "vitest": "^4.1.10"
   }
 }

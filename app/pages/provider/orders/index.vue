@@ -18,6 +18,7 @@ const orderBase = computed(() => route.path.startsWith("/employee") ? "/employee
 const allOptionValue = "__all__";
 const search = ref(typeof route.query.search === "string" ? route.query.search : "");
 const status = ref(typeof route.query.status === "string" ? route.query.status : allOptionValue);
+const page = ref(typeof route.query.page === "string" ? Math.max(Number(route.query.page) || 1, 1) : 1);
 const statusOptions = computed(() => [
   { label: t("common.allStatuses"), value: allOptionValue },
   { label: t("statuses.DRAFT"), value: "DRAFT" },
@@ -28,10 +29,14 @@ const statusOptions = computed(() => [
   { label: t("statuses.COMPLETED"), value: "COMPLETED" },
   { label: t("statuses.CANCELLED"), value: "CANCELLED" },
 ]);
-const query = computed(() => ({ search: search.value || undefined, status: status.value === allOptionValue ? undefined : status.value }));
-const { data, pending, error } = await useFetch<{ items: ServiceOrderItem[] }>("/api/service-orders", { query });
+const query = computed(() => ({ search: search.value || undefined, status: status.value === allOptionValue ? undefined : status.value, page: page.value > 1 ? page.value : undefined }));
+const { data, pending, error } = await useFetch<{ items: ServiceOrderItem[]; pagination: { page: number; pages: number; total: number } }>("/api/service-orders", { query });
 const orders = computed(() => data.value?.items || []);
+const pagination = computed(() => data.value?.pagination || { page: 1, pages: 1, total: 0 });
 
+watch([search, status], () => {
+  page.value = 1;
+});
 watch(query, (value) => router.replace({ query: value }), { deep: true });
 
 const statusColor = (value: ServiceOrderItem["status"]) => ({
@@ -72,7 +77,8 @@ const priorityColor = (value: ServiceOrderItem["priority"]) => ({
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>
     <p v-else-if="pending" class="drixal-panel rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("serviceOrders.loading") }}</p>
 
-    <div v-else-if="orders.length" class="table-scroll">
+    <div v-else-if="orders.length">
+      <div class="table-scroll">
       <table class="business-table">
         <thead>
           <tr>
@@ -100,6 +106,11 @@ const priorityColor = (value: ServiceOrderItem["priority"]) => ({
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <div class="pt-3">
+        <PaginationBar :page="pagination.page" :pages="pagination.pages" :total="pagination.total" @update-page="page = $event" />
+      </div>
     </div>
 
     <div v-else class="drixal-panel rounded-xl border-dashed p-6 text-center">

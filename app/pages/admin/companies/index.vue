@@ -13,11 +13,17 @@ const { t } = useLocale();
 const allOptionValue = "__all__";
 const search = ref("");
 const status = ref(allOptionValue);
+const page = ref(1);
 const actionPending = ref("");
 const actionError = ref("");
-const query = computed(() => ({ search: search.value || undefined, status: status.value === allOptionValue ? undefined : status.value }));
-const { data, pending, error, refresh } = await useFetch<{ items: CompanyItem[] }>("/api/admin/companies", { query });
+const confirm = useConfirm();
+const query = computed(() => ({ search: search.value || undefined, status: status.value === allOptionValue ? undefined : status.value, page: page.value > 1 ? page.value : undefined }));
+const { data, pending, error, refresh } = await useFetch<{ items: CompanyItem[]; pagination: { page: number; pages: number; total: number } }>("/api/admin/companies", { query });
 const companies = computed(() => data.value?.items || []);
+const pagination = computed(() => data.value?.pagination || { page: 1, pages: 1, total: 0 });
+watch([search, status], () => {
+  page.value = 1;
+});
 const statusOptions = computed(() => [
   { label: t("common.allStatuses"), value: allOptionValue },
   { label: t("statuses.PENDING"), value: "PENDING" },
@@ -34,6 +40,15 @@ const statusColor = (value: CompanyItem["status"]) => ({
 }[value]);
 
 const updateStatus = async (company: CompanyItem, nextStatus: "APPROVED" | "REJECTED" | "SUSPENDED") => {
+  if (nextStatus === "REJECTED" || nextStatus === "SUSPENDED") {
+    const confirmed = await confirm.open({
+      title: nextStatus === "REJECTED" ? t("confirm.rejectCompany") : t("confirm.suspendCompany"),
+      description: nextStatus === "REJECTED" ? t("confirm.rejectCompanyDescription") : t("confirm.suspendCompanyDescription"),
+      cancelLabel: t("confirm.cancel"),
+      confirmLabel: t("confirm.accept"),
+    });
+    if (!confirmed) return;
+  }
   actionPending.value = `${company._id}:${nextStatus}`;
   actionError.value = "";
   try {
@@ -68,7 +83,8 @@ const updateStatus = async (company: CompanyItem, nextStatus: "APPROVED" | "REJE
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>
     <p v-else-if="pending" class="drixal-panel rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("companyAdmin.loading") }}</p>
 
-    <div v-else-if="companies.length" class="table-scroll">
+    <div v-else-if="companies.length">
+      <div class="table-scroll">
       <table class="business-table">
         <thead><tr><th>{{ t("common.company") }}</th><th>{{ t("common.location") }}</th><th>{{ t("common.status") }}</th><th>{{ t("companyAdmin.registered") }}</th><th>{{ t("common.actions") }}</th></tr></thead>
         <tbody>
@@ -87,6 +103,11 @@ const updateStatus = async (company: CompanyItem, nextStatus: "APPROVED" | "REJE
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <div class="pt-3">
+        <PaginationBar :page="pagination.page" :pages="pagination.pages" :total="pagination.total" @update-page="page = $event" />
+      </div>
     </div>
 
     <div v-else class="drixal-panel rounded-xl border-dashed p-6 text-center">

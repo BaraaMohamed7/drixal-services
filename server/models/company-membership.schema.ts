@@ -4,8 +4,19 @@ import mongoose from "mongoose";
 export const companyMembershipRoleValues = ["OWNER", "ADMIN", "MANAGER", "TECHNICIAN", "VIEWER"] as const;
 export const companyMembershipStatusValues = ["ACTIVE", "INACTIVE"] as const;
 export type CompanyMembershipRole = (typeof companyMembershipRoleValues)[number];
+export type CompanyMembershipStatus = (typeof companyMembershipStatusValues)[number];
 
-export const CompanyMembership = defineMongooseModel({
+export interface CompanyMembershipDocument {
+  _id: mongoose.Types.ObjectId;
+  companyId: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  role: CompanyMembershipRole;
+  status: CompanyMembershipStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const CompanyMembership = defineMongooseModel<CompanyMembershipDocument>({
   name: "CompanyMembership",
   schema: {
     companyId: {

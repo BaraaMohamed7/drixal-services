@@ -2,8 +2,22 @@ import { defineMongooseModel } from "#nuxt/mongoose";
 import mongoose from "mongoose";
 
 export const customerStatusValues = ["ACTIVE", "INACTIVE"] as const;
+export type CustomerStatus = (typeof customerStatusValues)[number];
 
-export const Customer = defineMongooseModel({
+export interface CustomerDocument {
+  _id: mongoose.Types.ObjectId;
+  companyId: mongoose.Types.ObjectId;
+  userId?: mongoose.Types.ObjectId;
+  name: string;
+  phone: string;
+  email: string;
+  city: string;
+  status: CustomerStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const Customer = defineMongooseModel<CustomerDocument>({
   name: "Customer",
   schema: {
     companyId: {

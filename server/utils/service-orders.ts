@@ -1,8 +1,14 @@
-import { serviceOrderLineStatusValues, serviceOrderPriorityValues, serviceOrderStatusValues } from "../models/service-order.schema";
+import { serviceOrderLineStatusValues, serviceOrderPriorityValues, serviceOrderStatusValues, type ServiceOrderLineDocument, type ServiceOrderLineStatus, type ServiceOrderPriority, type ServiceOrderStatus } from "../models/service-order.schema";
 import { Customer } from "../models/customer.schema";
 import { Service } from "../models/service.schema";
 import { ServiceRequest } from "../models/service-request.schema";
-import { isValidObjectId } from "./mongodb";
+import { CompanyMembership } from "../models/company-membership.schema";
+import { User } from "../models/user.schema";
+import { isValidObjectId, toObjectId } from "./mongodb";
+import { assertOrderStatusTransition, orderCreateStatuses } from "./transitions";
+import type mongoose from "mongoose";
+
+export { assertOrderStatusTransition, orderCreateStatuses };
 
 type ServiceOrderInput = {
   customerId?: unknown;
@@ -14,6 +20,7 @@ type ServiceOrderInput = {
   status?: unknown;
   scheduledDate?: unknown;
   assignedTo?: unknown;
+  assignedUserId?: unknown;
 };
 
 type ServiceOrderLineInput = {
@@ -30,7 +37,24 @@ type ServiceOrderLineInput = {
 type ServiceOrderUpdateInput = {
   scheduledDate?: unknown;
   assignedTo?: unknown;
+  assignedUserId?: unknown;
   status?: unknown;
+};
+
+type ServiceOrderCreateInput = {
+  customerId: string;
+  serviceId: string;
+  requestId?: string;
+  customerUserId?: mongoose.Types.ObjectId;
+  orderNumber: string;
+  title: string;
+  description: string;
+  priority: ServiceOrderPriority;
+  status: ServiceOrderStatus;
+  scheduledDate?: Date;
+  assignedTo: string;
+  assignedUserId?: mongoose.Types.ObjectId;
+  lines: ServiceOrderLineDocument[];
 };
 
 const requiredString = (value: unknown, field: string) => {
@@ -52,6 +76,17 @@ const objectIdString = (value: unknown, field: string) => {
   return id;
 };
 
+const resolveAssignedUser = async (companyId: string | mongoose.Types.ObjectId, userId: string) => {
+  const id = toObjectId(userId);
+  const membership = await CompanyMembership.findOne({ companyId, userId: id, status: "ACTIVE" }).select("_id");
+  if (!membership) throw createError({ statusCode: 400, statusMessage: "assignedUserId is not an active member of this company" });
+
+  const user = await User.findById(id).select("name");
+  if (!user) throw createError({ statusCode: 400, statusMessage: "assignedUserId is invalid" });
+
+  return user;
+};
+
 const normalizeDate = (value: unknown) => {
   const date = optionalString(value);
   return date ? new Date(date) : undefined;
@@ -66,28 +101,36 @@ const normalizePositiveNumber = (value: unknown, field: string, fallback?: numbe
   return number;
 };
 
-const normalizePriority = (value: unknown) => {
+const normalizePriority = (value: unknown): ServiceOrderPriority => {
   if (value === undefined || value === "") return "MEDIUM";
-  if (typeof value !== "string" || !serviceOrderPriorityValues.includes(value as (typeof serviceOrderPriorityValues)[number])) {
+  if (typeof value !== "string" || !serviceOrderPriorityValues.includes(value as ServiceOrderPriority)) {
     throw createError({ statusCode: 400, statusMessage: "priority is invalid" });
   }
-  return value;
+  return value as ServiceOrderPriority;
 };
 
-const normalizeStatus = (value: unknown) => {
+const normalizeStatus = (value: unknown): ServiceOrderStatus => {
   if (value === undefined || value === "") return "DRAFT";
-  if (typeof value !== "string" || !serviceOrderStatusValues.includes(value as (typeof serviceOrderStatusValues)[number])) {
+  if (typeof value !== "string" || !serviceOrderStatusValues.includes(value as ServiceOrderStatus)) {
     throw createError({ statusCode: 400, statusMessage: "status is invalid" });
   }
-  return value;
+  return value as ServiceOrderStatus;
 };
 
-export const nextOrderNumber = async (companyId: unknown) => {
+const normalizeCreateStatus = (value: unknown): ServiceOrderStatus => {
+  const status = normalizeStatus(value);
+  if (!orderCreateStatuses.includes(status)) {
+    throw createError({ statusCode: 400, statusMessage: "status must be DRAFT or SCHEDULED when creating an order" });
+  }
+  return status;
+};
+
+export const nextOrderNumber = async (companyId: string | mongoose.Types.ObjectId) => {
   const count = await ServiceOrder.countDocuments({ companyId });
   return `SO-${String(count + 1001).padStart(4, "0")}`;
 };
 
-export const normalizeCreateServiceOrderInput = async (companyId: unknown, body: ServiceOrderInput) => {
+export const normalizeCreateServiceOrderInput = async (companyId: string | mongoose.Types.ObjectId, body: ServiceOrderInput): Promise<ServiceOrderCreateInput> => {
   const customerId = objectIdString(body.customerId, "customerId");
   const serviceId = objectIdString(body.serviceId, "serviceId");
   const requestId = body.requestId ? objectIdString(body.requestId, "requestId") : undefined;
@@ -107,6 +150,14 @@ export const normalizeCreateServiceOrderInput = async (companyId: unknown, body:
     throw createError({ statusCode: 400, statusMessage: "requestId does not reference the selected customer" });
   }
 
+  let assignedTo = optionalString(body.assignedTo);
+  let assignedUserId: mongoose.Types.ObjectId | undefined;
+  if (body.assignedUserId !== undefined && body.assignedUserId !== null && body.assignedUserId !== "") {
+    const user = await resolveAssignedUser(companyId, objectIdString(body.assignedUserId, "assignedUserId"));
+    assignedUserId = user._id;
+    if (!assignedTo) assignedTo = user.name;
+  }
+
   return {
     customerId,
     serviceId,
@@ -116,9 +167,10 @@ export const normalizeCreateServiceOrderInput = async (companyId: unknown, body:
     title: requiredString(body.title, "title"),
     description: optionalString(body.description),
     priority: normalizePriority(body.priority),
-    status: normalizeStatus(body.status),
+    status: normalizeCreateStatus(body.status),
     scheduledDate: normalizeDate(body.scheduledDate),
-    assignedTo: optionalString(body.assignedTo),
+    assignedTo,
+    assignedUserId,
     lines: [
       {
         title: requiredString(body.title, "title"),
@@ -141,7 +193,7 @@ export const normalizeCreateServiceOrderLineInput = (body: ServiceOrderLineInput
     title: requiredString(body.title, "title"),
     quantity: normalizePositiveNumber(body.quantity, "quantity", 1),
     assignedTo: optionalString(body.assignedTo),
-    status,
+    status: status as ServiceOrderLineStatus,
     cost: {
       amount: normalizePositiveNumber(body.cost?.amount, "cost.amount"),
       currency: optionalString(body.cost?.currency).toUpperCase() || "EGP",
@@ -149,11 +201,20 @@ export const normalizeCreateServiceOrderLineInput = (body: ServiceOrderLineInput
   };
 };
 
-export const normalizeUpdateServiceOrderInput = (body: ServiceOrderUpdateInput) => {
+export const normalizeUpdateServiceOrderInput = async (companyId: string | mongoose.Types.ObjectId, body: ServiceOrderUpdateInput) => {
   const update: Record<string, unknown> = {};
 
   if (body.scheduledDate !== undefined) update.scheduledDate = normalizeDate(body.scheduledDate);
   if (body.assignedTo !== undefined) update.assignedTo = optionalString(body.assignedTo);
+  if (body.assignedUserId !== undefined) {
+    if (body.assignedUserId === null || body.assignedUserId === "") {
+      update.assignedUserId = null;
+    } else {
+      const user = await resolveAssignedUser(companyId, objectIdString(body.assignedUserId, "assignedUserId"));
+      update.assignedUserId = user._id;
+      if (body.assignedTo === undefined) update.assignedTo = user.name;
+    }
+  }
   if (body.status !== undefined) update.status = normalizeStatus(body.status);
 
   return update;

@@ -1,3 +1,5 @@
+import type mongoose from "mongoose";
+
 type CustomerInput = {
   name?: unknown;
   phone?: unknown;
@@ -23,24 +25,29 @@ export const normalizeCustomerInput = (body: CustomerInput) => ({
   status: "ACTIVE",
 });
 
-export const upsertCustomerFromRequest = async (companyId: unknown, customer: CustomerInput) => {
+export const upsertCustomerFromRequest = async (companyId: string | mongoose.Types.ObjectId, customer: CustomerInput) => {
   const input = normalizeCustomerInput(customer);
-
-  return Customer.findOneAndUpdate(
+  const customerDoc = await Customer.findOneAndUpdate(
     { companyId, phone: input.phone },
     { companyId, ...input },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true, runValidators: true },
   );
+
+  if (!customerDoc) throw createError({ statusCode: 500, statusMessage: "Failed to create customer" });
+  return customerDoc;
 };
 
-export const upsertCustomerForUser = async (companyId: unknown, userId: unknown, customer: CustomerInput) => {
+export const upsertCustomerForUser = async (companyId: string | mongoose.Types.ObjectId, userId: string | mongoose.Types.ObjectId, customer: CustomerInput) => {
   const input = normalizeCustomerInput(customer);
   const existingPhone = await Customer.findOne({ companyId, phone: input.phone, userId: { $ne: userId } }).select("_id userId");
   if (existingPhone) throw createError({ statusCode: 409, statusMessage: "This phone is already registered with the provider" });
 
-  return Customer.findOneAndUpdate(
+  const customerDoc = await Customer.findOneAndUpdate(
     { companyId, userId },
     { companyId, userId, ...input },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true, runValidators: true },
   );
+
+  if (!customerDoc) throw createError({ statusCode: 500, statusMessage: "Failed to create customer" });
+  return customerDoc;
 };

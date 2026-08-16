@@ -19,11 +19,17 @@ type ProviderRequest = {
 
 const allOptionValue = "__all__";
 const status = ref(allOptionValue);
+const page = ref(1);
 const { t } = useLocale();
 const { hasPermission } = useProviderSession();
-const query = computed(() => ({ status: status.value === allOptionValue ? undefined : status.value }));
-const { data, pending, error, refresh } = await useFetch<{ items: ProviderRequest[] }>("/api/service-requests", { query });
+const confirm = useConfirm();
+const query = computed(() => ({ status: status.value === allOptionValue ? undefined : status.value, page: page.value > 1 ? page.value : undefined }));
+const { data, pending, error, refresh } = await useFetch<{ items: ProviderRequest[]; pagination: { page: number; pages: number; total: number } }>("/api/service-requests", { query });
 const requests = computed(() => data.value?.items || []);
+const pagination = computed(() => data.value?.pagination || { page: 1, pages: 1, total: 0 });
+watch(status, () => {
+  page.value = 1;
+});
 const actionPending = ref("");
 const statusOptions = computed(() => [
   { label: t("common.allStatuses"), value: allOptionValue },
@@ -49,6 +55,15 @@ const requestStatusSeverity = (value: ProviderRequest["status"]) => ({
 const runAction = async (request: ProviderRequest, action: "approve" | "reject" | "convert") => {
   const permission = action === "convert" ? "requests.convert" : "requests.decide";
   if (!hasPermission(permission)) return;
+  if (action === "reject") {
+    const confirmed = await confirm.open({
+      title: t("confirm.rejectRequest"),
+      description: t("confirm.rejectRequestDescription"),
+      cancelLabel: t("confirm.cancel"),
+      confirmLabel: t("confirm.accept"),
+    });
+    if (!confirmed) return;
+  }
   actionPending.value = `${request._id}:${action}`;
   try {
     await $fetch(`/api/service-requests/${request._id}/${action}`, { method: "POST" });
@@ -74,7 +89,8 @@ const runAction = async (request: ProviderRequest, action: "approve" | "reject" 
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>
     <p v-else-if="pending" class="drixal-panel rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("providerRequests.loading") }}</p>
 
-    <div v-else-if="requests.length" class="table-scroll">
+    <div v-else-if="requests.length">
+      <div class="table-scroll">
       <table class="business-table">
         <thead>
           <tr>
@@ -109,6 +125,11 @@ const runAction = async (request: ProviderRequest, action: "approve" | "reject" 
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <div class="pt-3">
+        <PaginationBar :page="pagination.page" :pages="pagination.pages" :total="pagination.total" @update-page="page = $event" />
+      </div>
     </div>
 
     <div v-else class="drixal-panel rounded-xl border-dashed p-6 text-center">

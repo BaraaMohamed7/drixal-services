@@ -13,6 +13,21 @@ import type { H3Event } from "h3";
 
 export const demoCompanySlug = process.env.DEMO_COMPANY_SLUG || "cool-air-services";
 
+export const normalizeBoolean = (value: unknown): boolean =>
+  value === true || value === "true" || value === "1";
+
+export const assertCategoryActive = async (categoryId: unknown) => {
+  if (categoryId === undefined || categoryId === null) {
+    throw createError({ statusCode: 400, statusMessage: "Category is not active" });
+  }
+  const id = typeof categoryId === "string" ? categoryId : String(categoryId);
+  const category = await ServiceCategory.findOne({ _id: id, isActive: true });
+  if (!category) {
+    throw createError({ statusCode: 400, statusMessage: "Category is not active" });
+  }
+  return category;
+};
+
 type ServiceInput = {
   categoryId?: unknown;
   name?: unknown;
@@ -82,7 +97,7 @@ export const normalizeCreateServiceInput = (body: ServiceInput) => {
     duration: normalizeDuration(body.duration),
     locationType: normalizeLocationType(body.locationType) || "FLEXIBLE",
     scheduling: {
-      required: Boolean(body.scheduling?.required),
+      required: normalizeBoolean(body.scheduling?.required),
     },
     operationalStatus: "ACTIVE" as OperationalStatus,
     publicationStatus: "DRAFT" as PublicationStatus,
@@ -106,7 +121,7 @@ export const normalizeUpdateServiceInput = (body: ServiceInput) => {
   if (body.pricing !== undefined) update.pricing = normalizePricing(body.pricing);
   if (body.duration !== undefined) update.duration = normalizeDuration(body.duration);
   if (body.locationType !== undefined) update.locationType = normalizeLocationType(body.locationType);
-  if (body.scheduling !== undefined) update.scheduling = { required: Boolean(body.scheduling.required) };
+  if (body.scheduling !== undefined) update.scheduling = { required: normalizeBoolean(body.scheduling.required) };
   if (body.operationalStatus !== undefined) update.operationalStatus = normalizeOperationalStatus(body.operationalStatus);
 
   return update;

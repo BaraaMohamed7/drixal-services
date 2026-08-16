@@ -17,9 +17,17 @@ type ServiceOrderDetail = {
   priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   scheduledDate?: string;
   assignedTo?: string;
+  assignedUserId?: string;
   customerId?: { name: string; phone?: string; city?: string };
   serviceId?: { name: string };
   lines: ServiceOrderLine[];
+};
+
+type CompanyMember = {
+  id: string;
+  userId: string;
+  name: string;
+  role: string;
 };
 
 const route = useRoute();
@@ -29,8 +37,38 @@ const orderBase = computed(() => route.path.startsWith("/employee") ? "/employee
 const { data: order, pending, error, refresh } = await useFetch<ServiceOrderDetail>(`/api/service-orders/${route.params.id}`);
 const linePending = ref(false);
 const assignmentPending = ref("");
+const orderAssignmentPending = ref(false);
 const lineError = ref("");
 const assignmentError = ref("");
+const orderAssignmentError = ref("");
+const members = ref<CompanyMember[]>([]);
+const assignedUserId = ref("");
+
+if (hasPermission("orders.manage")) {
+  const { data: memberData } = await useFetch<{ items: CompanyMember[] }>("/api/company/members");
+  members.value = memberData.value?.items || [];
+}
+
+watch(order, (value) => {
+  if (value?.assignedUserId) assignedUserId.value = value.assignedUserId;
+});
+
+const assignOrder = async () => {
+  if (!hasPermission("orders.manage")) return;
+  orderAssignmentPending.value = true;
+  orderAssignmentError.value = "";
+  try {
+    await $fetch(`/api/service-orders/${route.params.id}`, {
+      method: "PATCH",
+      body: { assignedUserId: assignedUserId.value },
+    });
+    await refresh();
+  } catch (err) {
+    orderAssignmentError.value = err instanceof Error ? err.message : t("serviceOrders.assignmentError");
+  } finally {
+    orderAssignmentPending.value = false;
+  }
+};
 const lineForm = reactive({
   title: "",
   quantity: 1,
@@ -192,6 +230,18 @@ const updateLineAssignment = async (line: ServiceOrderLine) => {
           <div>
             <dt class="drixal-muted font-bold">{{ t("common.assignedTo") }}</dt>
             <dd class="mt-1 font-semibold">{{ order.assignedTo || '-' }}</dd>
+          </div>
+          <div v-if="hasPermission('orders.manage')">
+            <dt class="drixal-muted font-bold">{{ t("common.assign") }}</dt>
+            <dd class="mt-1 flex flex-col gap-2">
+              <USelect
+                v-model="assignedUserId"
+                :items="[{ label: t('common.unassigned'), value: '' }, ...members.map((member) => ({ label: `${member.name} (${member.role})`, value: member.userId }))]"
+                size="sm"
+              />
+              <UButton :label="t('common.saveChanges')" size="sm" color="neutral" variant="outline" :loading="orderAssignmentPending" @click="assignOrder" />
+              <p v-if="orderAssignmentError" class="drixal-danger text-xs font-bold">{{ orderAssignmentError }}</p>
+            </dd>
           </div>
           <div>
             <dt class="drixal-muted font-bold">{{ t("common.scheduledDate") }}</dt>

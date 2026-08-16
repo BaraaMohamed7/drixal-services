@@ -1,6 +1,15 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
 
-export const ServiceCategory = defineMongooseModel({
+export interface ServiceCategoryDocument {
+  _id: import("mongoose").Types.ObjectId;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const ServiceCategory = defineMongooseModel<ServiceCategoryDocument>({
   name: "ServiceCategory",
   schema: {
     name: {
