@@ -105,6 +105,16 @@ const formatPrice = (service: MarketplaceService) => {
   return `${service.pricing.amount ?? 0} ${service.pricing.currency}${suffix}`;
 };
 
+const viewMode = ref<"cards" | "rows">("cards");
+
+if (import.meta.client) {
+  const savedView = localStorage.getItem("marketplace:view");
+  if (savedView === "cards" || savedView === "rows") viewMode.value = savedView;
+}
+watch(viewMode, (value) => {
+  if (import.meta.client) localStorage.setItem("marketplace:view", value);
+});
+
 const resetFilters = () => {
   searchInput.value = "";
   filters.category = allOptionValue;
@@ -136,26 +146,50 @@ const resetFilters = () => {
 
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="drixal-muted text-sm font-bold">{{ t("marketplace.found", { count: total }) }}</p>
-      <UButton v-if="auth.session.value.authenticated" :to="auth.workspaceHome.value" :label="t('shell.openWorkspace')" size="sm" />
+      <div class="flex items-center gap-3">
+        <div role="group" :aria-label="t('marketplace.viewToggleLabel')" class="flex items-center gap-1 rounded-lg border border-[var(--drixal-line)] bg-[var(--drixal-surface)] p-1">
+          <button
+            type="button"
+            :aria-label="t('marketplace.viewCards')"
+            :aria-pressed="viewMode === 'cards'"
+            class="flex size-8 items-center justify-center rounded-md transition-colors"
+            :class="viewMode === 'cards' ? 'bg-[var(--drixal-soft)] text-[var(--drixal-blue)]' : 'text-[var(--drixal-muted)] hover:text-[var(--drixal-blue)]'"
+            @click="viewMode = 'cards'"
+          >
+            <UIcon name="i-lucide-layout-grid" class="size-4" />
+          </button>
+          <button
+            type="button"
+            :aria-label="t('marketplace.viewRows')"
+            :aria-pressed="viewMode === 'rows'"
+            class="flex size-8 items-center justify-center rounded-md transition-colors"
+            :class="viewMode === 'rows' ? 'bg-[var(--drixal-soft)] text-[var(--drixal-blue)]' : 'text-[var(--drixal-muted)] hover:text-[var(--drixal-blue)]'"
+            @click="viewMode = 'rows'"
+          >
+            <UIcon name="i-lucide-list" class="size-4" />
+          </button>
+        </div>
+        <UButton v-if="auth.session.value.authenticated" :to="auth.workspaceHome.value" :label="t('shell.openWorkspace')" size="sm" />
+      </div>
     </div>
 
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>
     <p v-else-if="pending" class="drixal-panel rounded-xl p-6 text-center font-semibold drixal-muted">{{ t("marketplace.loading") }}</p>
 
     <template v-else-if="services.length">
-      <div class="grid gap-3 sm:hidden">
+      <div v-if="viewMode === 'cards'" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <NuxtLink v-for="service in services" :key="service.id" :to="`/marketplace/companies/${service.company.slug}/services/${service.slug}`" class="drixal-panel block p-4 transition-colors hover:bg-[var(--drixal-hover)]">
-<div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <h2 class="truncate font-bold">{{ service.name }}</h2>
-                <NuxtLink :to="`/marketplace/companies/${service.company.slug}`" class="mt-1 block truncate text-xs font-semibold text-[var(--drixal-blue)] hover:underline">{{ service.company.name }}</NuxtLink>
-              </div>
-              <UBadge :label="service.category.name" color="primary" variant="soft" />
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="truncate font-bold">{{ service.name }}</h2>
+              <NuxtLink :to="`/marketplace/companies/${service.company.slug}`" class="mt-1 block truncate text-xs font-semibold text-[var(--drixal-blue)] hover:underline">{{ service.company.name }}</NuxtLink>
             </div>
-            <p class="mt-3 line-clamp-2 text-sm leading-5 text-[var(--drixal-muted)]">{{ service.description }}</p>
-            <div class="mt-4 flex items-end justify-between gap-4 border-t border-[var(--drixal-line)] pt-3">
-              <div class="text-xs text-[var(--drixal-muted)]">
-                <p>{{ service.company.location.city || t("serviceDetail.flexible") }} · {{ t(`enums.locationType.${service.locationType}`) }}</p>
+            <UBadge :label="service.category.name" color="primary" variant="soft" />
+          </div>
+          <p class="mt-3 line-clamp-2 text-sm leading-5 text-[var(--drixal-muted)]">{{ service.description }}</p>
+          <div class="mt-4 flex items-end justify-between gap-4 border-t border-[var(--drixal-line)] pt-3">
+            <div class="text-xs text-[var(--drixal-muted)]">
+              <p>{{ service.company.location.city || t("serviceDetail.flexible") }} · {{ t(`enums.locationType.${service.locationType}`) }}</p>
               <p class="mt-1 text-sm font-bold text-[var(--drixal-ink)]">{{ formatPrice(service) }}</p>
             </div>
             <span class="inline-flex items-center gap-1 text-sm font-bold text-[var(--drixal-blue)]">{{ t("marketplace.viewService") }} <UIcon name="i-lucide-arrow-right" class="size-4 rtl:rotate-180" /></span>
@@ -163,40 +197,38 @@ const resetFilters = () => {
         </NuxtLink>
       </div>
 
-      <div class="table-scroll hidden sm:block">
+      <div v-else class="table-scroll">
         <table class="business-table">
-        <thead>
-          <tr>
-            <th>{{ t("common.service") }}</th>
-            <th>{{ t("common.provider") }}</th>
-            <th>{{ t("common.category") }}</th>
-            <th>{{ t("common.location") }}</th>
-            <th>{{ t("common.price") }}</th>
-            <th>{{ t("marketplace.viewService") }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="service in services" :key="service.id">
-            <td>
-              <NuxtLink :to="`/marketplace/companies/${service.company.slug}/services/${service.slug}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ service.name }}</NuxtLink>
-              <div class="drixal-muted mt-1 max-w-md truncate text-xs">{{ service.description }}</div>
-            </td>
-            <td>
-              <NuxtLink :to="`/marketplace/companies/${service.company.slug}`" class="font-semibold text-[var(--drixal-blue)] hover:underline">{{ service.company.name }}</NuxtLink>
-              <div class="drixal-muted text-xs">{{ service.company.location.area }}{{ service.company.location.area && service.company.location.city ? ", " : "" }}{{ service.company.location.city }}</div>
-            </td>
-            <td><UBadge :label="service.category.name" color="primary" variant="soft" /></td>
-            <td>{{ t(`enums.locationType.${service.locationType}`) }}</td>
-            <td>{{ formatPrice(service) }}</td>
-            <td><UButton :to="`/marketplace/companies/${service.company.slug}/services/${service.slug}`" :label="t('marketplace.viewService')" size="sm" /></td>
-          </tr>
-        </tbody>
+          <thead>
+            <tr>
+              <th>{{ t("common.service") }}</th>
+              <th>{{ t("common.provider") }}</th>
+              <th>{{ t("common.category") }}</th>
+              <th>{{ t("common.location") }}</th>
+              <th>{{ t("common.price") }}</th>
+              <th>{{ t("marketplace.viewService") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="service in services" :key="service.id">
+              <td>
+                <NuxtLink :to="`/marketplace/companies/${service.company.slug}/services/${service.slug}`" class="font-bold text-[var(--drixal-blue)] hover:underline">{{ service.name }}</NuxtLink>
+                <div class="drixal-muted mt-1 max-w-md truncate text-xs">{{ service.description }}</div>
+              </td>
+              <td>
+                <NuxtLink :to="`/marketplace/companies/${service.company.slug}`" class="font-semibold text-[var(--drixal-blue)] hover:underline">{{ service.company.name }}</NuxtLink>
+                <div class="drixal-muted text-xs">{{ service.company.location.area }}{{ service.company.location.area && service.company.location.city ? ", " : "" }}{{ service.company.location.city }}</div>
+              </td>
+              <td><UBadge :label="service.category.name" color="primary" variant="soft" /></td>
+              <td>{{ t(`enums.locationType.${service.locationType}`) }}</td>
+              <td>{{ formatPrice(service) }}</td>
+              <td><UButton :to="`/marketplace/companies/${service.company.slug}/services/${service.slug}`" :label="t('marketplace.viewService')" size="sm" /></td>
+            </tr>
+          </tbody>
         </table>
       </div>
 
-      <div class="hidden sm:block">
-        <PaginationBar :page="pagination.page" :pages="pagination.pages" :total="pagination.total" @update-page="page = $event" />
-      </div>
+      <PaginationBar :page="pagination.page" :pages="pagination.pages" :total="pagination.total" @update-page="page = $event" />
     </template>
 
     <div v-else class="drixal-panel rounded-xl border-dashed p-6 text-center">

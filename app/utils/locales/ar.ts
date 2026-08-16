@@ -199,6 +199,9 @@ export const ar: typeof en = {
     clearFilters: "مسح الفلاتر",
     viewService: "عرض الخدمة",
     viewCompany: "عرض المزوّد",
+    viewToggleLabel: "تغيير عرض السوق",
+    viewCards: "عرض البطاقات",
+    viewRows: "عرض القائمة",
   },
   confirm: {
     title: "تأكيد الإجراء",

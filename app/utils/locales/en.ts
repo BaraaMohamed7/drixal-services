@@ -197,6 +197,9 @@ export const en = {
     clearFilters: "Clear Filters",
     viewService: "View Service",
     viewCompany: "View provider",
+    viewToggleLabel: "Change marketplace view",
+    viewCards: "Card view",
+    viewRows: "List view",
   },
   confirm: {
     title: "Confirm action",
