@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const page = Math.max(Number(query.page) || 1, 1);
   const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 100);
-  const companyFilter: Record<string, unknown> = { status: "APPROVED" };
+  const companyFilter: Record<string, unknown> = { status: "ACTIVE" };
   const serviceFilter: Record<string, unknown> = {
     publicationStatus: "PUBLISHED",
     operationalStatus: "ACTIVE",

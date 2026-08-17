@@ -41,12 +41,12 @@ const navItems = computed(() => ({
     { label: t("common.requests"), to: "/customer/requests", icon: "i-lucide-messages-square" },
     { label: t("common.orders"), to: "/customer/orders", icon: "i-lucide-receipt-text" },
     { label: t("common.marketplace"), to: "/marketplace", icon: "i-lucide-store" },
-    ...(auth.session.value.user?.platformRole === "SUPER_ADMIN" ? [] : [{ label: t("common.createCompany"), to: "/register/company", icon: "i-lucide-building-2" }]),
+    ...(auth.session.value.user?.type === "SUPER_ADMIN" ? [] : [{ label: t("common.createCompany"), to: "/register/company", icon: "i-lucide-building-2" }]),
   ],
   marketplace: [
     { label: t("common.marketplace"), to: "/marketplace", icon: "i-lucide-store" },
     ...(auth.session.value.authenticated ? [{ label: t("shell.openWorkspace"), to: auth.workspaceHome.value, icon: "i-lucide-layout-dashboard" }] : []),
-    ...(auth.session.value.user?.platformRole === "SUPER_ADMIN" ? [] : [{ label: t("marketplace.registerCompany"), to: "/register/company", icon: "i-lucide-building-2" }]),
+    ...(auth.session.value.user?.type === "SUPER_ADMIN" ? [] : [{ label: t("marketplace.registerCompany"), to: "/register/company", icon: "i-lucide-building-2" }]),
   ],
 }[workspace.value]));
 
@@ -54,7 +54,7 @@ const workspaceRoot = computed(() => ({ superAdmin: "/super-admin", companyAdmin
 const isActive = (to: string) => route.path === to || (to !== workspaceRoot.value && route.path.startsWith(`${to}/`));
 const accountRole = computed(() => {
   if (workspace.value === "superAdmin") return t("roles.SUPER_ADMIN");
-  if (auth.session.value.membership?.role) return t(`roles.${auth.session.value.membership.role}`);
+  if (auth.session.value.isOwner) return t("roles.OWNER");
   return t("workspaces.personal.title");
 });
 const userInitial = computed(() => auth.session.value.user?.name?.trim().charAt(0).toUpperCase() || "D");
@@ -66,59 +66,6 @@ watch(() => route.path, () => {
   mobileOpen.value = false;
   profileOpen.value = false;
   sidebarOpen.value = !route.path.startsWith("/marketplace") || auth.session.value.authenticated;
-});
-
-
-
-const handleWorkspaceSwitch = async (value: string) => {
-  if (!value || value === selectedWorkspace.value) return;
-  try {
-    if (value === "personal") await auth.switchWorkspace({ type: "PERSONAL" });
-    else if (value === "platform") await auth.switchWorkspace({ type: "PLATFORM" });
-    else if (value.startsWith("company:")) await auth.switchWorkspace({ type: "COMPANY", companyId: value.slice(8) });
-    await navigateTo(auth.workspaceHome.value);
-  } catch (err) {
-    console.error(err);
-  } finally {
-    profileOpen.value = false;
-  }
-};
-
-const workspaceOptions = computed(() => {
-  const options = [{
-    label: t("workspaces.personal.title"),
-    description: t("workspaces.personal.description"),
-    icon: "i-lucide-user-round",
-    value: "personal",
-  }];
-
-  for (const membership of auth.session.value.memberships) {
-    if (!membership.company) continue;
-    options.push({
-      label: membership.company.name,
-      description: t(`roles.${membership.role}`),
-      icon: "i-lucide-building-2",
-      value: `company:${membership.company.id}`,
-    });
-  }
-
-  if (auth.session.value.user?.platformRole === "SUPER_ADMIN") {
-    options.push({
-      label: t("workspaces.platform.title"),
-      description: t("roles.SUPER_ADMIN"),
-      icon: "i-lucide-shield-check",
-      value: "platform",
-    });
-  }
-
-  return options;
-});
-
-const selectedWorkspace = computed(() => {
-  const workspace = auth.session.value.activeWorkspace;
-  if (workspace?.type === "COMPANY") return `company:${workspace.companyId}`;
-  if (workspace?.type === "PLATFORM") return "platform";
-  return "personal";
 });
 
 const profileMenuRef = ref<HTMLElement | null>(null);
@@ -177,21 +124,10 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutsideProfil
               v-if="profileOpen"
               class="absolute end-0 top-full z-50 mt-2 min-w-60 rounded-lg border border-[var(--drixal-line)] bg-[var(--drixal-surface)] p-1.5 shadow-lg"
             >
-              <p class="px-2 py-1 text-xs font-semibold text-[var(--drixal-muted)]">{{ t("shell.switchWorkspace") }}</p>
-              <button
-                v-for="item in workspaceOptions"
-                :key="item.value"
-                type="button"
-                class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-start text-sm font-semibold transition-colors hover:bg-[var(--drixal-hover)]"
-                :class="item.value === selectedWorkspace ? 'bg-[var(--drixal-soft-strong)] text-[var(--drixal-blue)]' : 'text-[var(--drixal-ink)]'"
-                @click="handleWorkspaceSwitch(item.value)"
-              >
-                <UIcon :name="item.icon" class="size-4 shrink-0" />
-                <span class="min-w-0">
-                  <span class="block truncate">{{ item.label }}</span>
-                  <span v-if="item.description" class="block truncate text-xs font-normal text-[var(--drixal-muted)]">{{ item.description }}</span>
-                </span>
-              </button>
+              <div class="px-2 py-1">
+                <p class="text-xs font-semibold text-[var(--drixal-ink)]">{{ auth.session.value.user?.name }}</p>
+                <p class="text-xs text-[var(--drixal-muted)]">{{ auth.session.value.user?.email }}</p>
+              </div>
               <div class="my-1.5 border-t border-[var(--drixal-line)]" />
               <button
                 type="button"
@@ -270,31 +206,9 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutsideProfil
       :ui="{ content: 'max-w-80', body: 'flex flex-col p-0 sm:p-0' }"
     >
       <template #body>
-        <div v-if="navItems.length > 0" class="border-b border-[var(--drixal-line)] p-4">
-          <p class="text-xs font-semibold text-[var(--drixal-muted)]">{{ t("shell.currentWorkspace") }}</p>
-          <USelect
-            :model-value="auth.session.value.activeWorkspace?.type === 'PERSONAL' ? 'personal' : auth.session.value.activeWorkspace?.type === 'PLATFORM' ? 'platform' : auth.session.value.activeWorkspace?.type === 'COMPANY' ? `company:${auth.session.value.activeWorkspace.companyId}` : 'personal'"
-            :items="[
-              { label: t('workspaces.personal.title'), description: t('workspaces.personal.description'), icon: 'i-lucide-user-round', value: 'personal' },
-              ...auth.session.value.memberships.filter(m => m.company).map(m => ({
-                label: m.company!.name,
-                description: t(`roles.${m.role}`),
-                icon: 'i-lucide-building-2',
-                value: `company:${m.company!.id}`,
-              })),
-              ...(auth.session.value.user?.platformRole === 'SUPER_ADMIN' ? [{
-                label: t('workspaces.platform.title'),
-                description: t('roles.SUPER_ADMIN'),
-                icon: 'i-lucide-shield-check',
-                value: 'platform',
-              }] : []),
-            ]"
-            value-key="value"
-            label-key="label"
-            class="w-full mt-2"
-            :aria-label="t('shell.switchWorkspace')"
-            @update:model-value="handleWorkspaceSwitch"
-          />
+        <div v-if="auth.session.value.authenticated" class="border-b border-[var(--drixal-line)] p-4">
+          <p class="text-xs font-semibold text-[var(--drixal-ink)]">{{ auth.session.value.user?.name }}</p>
+          <p class="text-xs text-[var(--drixal-muted)]">{{ auth.session.value.user?.email }}</p>
         </div>
         <nav v-if="navItems.length > 0" class="grid gap-1 p-3" :aria-label="workspaceTitle">
           <NuxtLink v-for="item in navItems" :key="item.to" :to="item.to" class="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold" :class="isActive(item.to) ? 'bg-[var(--drixal-soft-strong)] text-[var(--drixal-blue)]' : 'text-[var(--drixal-muted)] hover:bg-[var(--drixal-hover)] hover:text-[var(--drixal-ink)]'">

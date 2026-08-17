@@ -4,9 +4,11 @@ import type { H3Event } from "h3";
 import { deleteCookie, getCookie, getHeader, getMethod, getRequestURL, setCookie } from "h3";
 import { AuthSession } from "../models/auth-session.schema";
 import { Company, type CompanyDocument } from "../models/company.schema";
-import { CompanyMembership } from "../models/company-membership.schema";
+import { CompanyMembership, type CompanyMembershipDocument } from "../models/company-membership.schema";
+import { Role } from "../models/role.schema";
 import { User } from "../models/user.schema";
-import { getPermissionsForPlatformRole, getPermissionsForRole } from "./permissions";
+import { allCompanyPermissions, getPermissionsForPlatformRole, type Permission } from "./permissions";
+import type { TenantContext } from "./tenant";
 import type { Types } from "mongoose";
 
 const sessionDuration = 60 * 60 * 24 * 14;
@@ -49,22 +51,55 @@ export const createAuthSession = async (event: H3Event, userId: string | Types.O
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + sessionDuration * 1000);
   await AuthSession.create({ tokenHash: hashToken(token), userId, expiresAt, lastSeenAt: new Date() });
-  setCookie(event, cookieName, token, {
+
+  const tenant = event.context.tenant;
+  const isCustomDomain = tenant?.kind === "COMPANY" && tenant?.domain && !tenant.domain.endsWith(".drixal.com");
+  const isProduction = process.env.NODE_ENV === "production";
+
+  const cookieOptions: Record<string, unknown> = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isProduction,
     sameSite: "lax",
     path: "/",
     maxAge: sessionDuration,
-  });
+  };
+
+  if (!isProduction && isCustomDomain) {
+    cookieOptions.domain = tenant!.domain;
+  }
+
+  setCookie(event, cookieName, token, cookieOptions);
 };
 
 export const revokeAuthSession = async (event: H3Event) => {
   const token = getCookie(event, cookieName);
   if (token) await AuthSession.deleteOne({ tokenHash: hashToken(token) });
-  deleteCookie(event, cookieName, { path: "/", secure: process.env.NODE_ENV === "production" });
+
+  const tenant = event.context.tenant;
+  const isCustomDomain = tenant?.kind === "COMPANY" && tenant?.domain && !tenant.domain.endsWith(".drixal.com");
+  const isProduction = process.env.NODE_ENV === "production";
+
+  const cookieOptions: Record<string, unknown> = { path: "/", secure: isProduction };
+  if (!isProduction && isCustomDomain) {
+    cookieOptions.domain = tenant!.domain;
+  }
+
+  deleteCookie(event, cookieName, cookieOptions);
 };
 
-export const getAuthContext = async (event: H3Event) => {
+export type AuthContext = {
+  authSession: InstanceType<typeof AuthSession>;
+  user: InstanceType<typeof User>;
+  tenant: TenantContext;
+  membership: (CompanyMembershipDocument & { companyId: CompanyDocument }) | null;
+  role: InstanceType<typeof Role> | null;
+  company: CompanyDocument | null;
+  isOwner: boolean;
+  isSuperAdmin: boolean;
+  permissions: Permission[];
+};
+
+export const getAuthContext = async (event: H3Event): Promise<AuthContext | null> => {
   const token = getCookie(event, cookieName);
   if (!token) return null;
 
@@ -81,27 +116,53 @@ export const getAuthContext = async (event: H3Event) => {
     return null;
   }
 
-  const memberships = await CompanyMembership.find({ userId: user._id, status: "ACTIVE" })
-    .sort({ createdAt: 1 })
-    .populate<{ companyId: CompanyDocument }>({ path: "companyId", model: Company });
-  const membership = authSession.activeWorkspaceType === "COMPANY" && authSession.activeCompanyId
-    ? memberships.find((item) => String(item.companyId?._id || item.companyId) === String(authSession.activeCompanyId)) || null
-    : null;
-  const company = membership?.companyId && typeof membership.companyId === "object" && "_id" in membership.companyId ? membership.companyId : null;
-  const platformPermissions = authSession.activeWorkspaceType === "PLATFORM" ? getPermissionsForPlatformRole(user.platformRole) : [];
-  const permissions = [...new Set([...getPermissionsForRole(membership?.role), ...platformPermissions])];
-
-  if ((authSession.activeWorkspaceType === "COMPANY" || authSession.activeCompanyId) && !membership) {
-    authSession.activeWorkspaceType = "PERSONAL";
-    authSession.activeCompanyId = undefined;
-    await authSession.save();
+  const tenant = event.context.tenant;
+  if (!tenant) {
+    throw createError({ statusCode: 500, statusMessage: "Tenant context not resolved" });
   }
+  const isSuperAdmin = user.platformRole === "SUPER_ADMIN";
+
+  let membership: (CompanyMembershipDocument & { companyId: CompanyDocument }) | null = null;
+  let company: CompanyDocument | null = null;
+  let isOwner = false;
+  let role: InstanceType<typeof Role> | null = null;
+  let companyPermissions: Permission[] = [];
+
+  if (tenant.kind === "COMPANY" && tenant.company) {
+    company = tenant.company;
+    const membershipDoc = await CompanyMembership.findOne({ userId: user._id, companyId: company._id, status: "ACTIVE" })
+      .populate<{ companyId: CompanyDocument }>({ path: "companyId", model: Company });
+    membership = membershipDoc as (CompanyMembershipDocument & { companyId: CompanyDocument }) | null;
+
+    isOwner = !!(company.ownerUserId && String(company.ownerUserId) === String(user._id));
+
+    if (membership?.roleId) {
+      role = await Role.findOne({ _id: membership.roleId, companyId: company._id });
+      if (role) {
+        companyPermissions = role.permissions as Permission[];
+      }
+    }
+
+    if (isOwner) {
+      companyPermissions = allCompanyPermissions;
+    }
+  }
+
+  const platformPermissions = tenant.kind === "PLATFORM"
+    ? getPermissionsForPlatformRole(user.platformRole)
+    : [];
+
+  const permissions = [...new Set([...companyPermissions, ...platformPermissions])];
+
+  const allMemberships = await CompanyMembership.find({ userId: user._id, status: "ACTIVE" })
+    .populate<{ companyId: CompanyDocument }>({ path: "companyId", model: Company })
+    .lean();
 
   if (Date.now() - new Date(authSession.lastSeenAt).getTime() > 60 * 60 * 1000) {
     await AuthSession.updateOne({ _id: authSession._id }, { lastSeenAt: new Date() });
   }
 
-  return { authSession, user, memberships, membership, company, permissions };
+  return { authSession, user, tenant, membership, role, company, isOwner, isSuperAdmin, permissions, allMemberships };
 };
 
 export const requireUser = async (event: H3Event) => {
@@ -111,8 +172,8 @@ export const requireUser = async (event: H3Event) => {
   return context;
 };
 
-export const toSessionDto = (context: Awaited<ReturnType<typeof getAuthContext>>) => {
-  if (!context) return { authenticated: false, user: null, activeWorkspace: null, company: null, membership: null, memberships: [], permissions: [] };
+export const toSessionDto = (context: AuthContext | null) => {
+  if (!context) return { authenticated: false, user: null, tenant: null, company: null, membership: null, isOwner: false, memberships: [], permissions: [] };
 
   return {
     authenticated: true,
@@ -120,11 +181,13 @@ export const toSessionDto = (context: Awaited<ReturnType<typeof getAuthContext>>
       id: String(context.user._id),
       name: context.user.name,
       email: context.user.email,
+      type: context.user.type,
       platformRole: context.user.platformRole,
     },
-    activeWorkspace: context.company
-      ? { type: "COMPANY" as const, companyId: String(context.company._id) }
-      : { type: context.authSession.activeWorkspaceType === "PLATFORM" ? "PLATFORM" as const : "PERSONAL" as const },
+    tenant: {
+      kind: context.tenant.kind,
+      domain: context.tenant.domain,
+    },
     company: context.company
       ? {
           id: String(context.company._id),
@@ -134,16 +197,23 @@ export const toSessionDto = (context: Awaited<ReturnType<typeof getAuthContext>>
         }
       : null,
     membership: context.membership
-      ? { id: String(context.membership._id), role: context.membership.role, status: context.membership.status }
+      ? { id: String(context.membership._id), roleId: context.membership.roleId ? String(context.membership.roleId) : null, status: context.membership.status }
       : null,
-    memberships: context.memberships.map((item) => {
-      const company = item.companyId && typeof item.companyId === "object" && "_id" in item.companyId ? item.companyId : null;
-      return {
-        id: String(item._id),
-        role: item.role,
-        company: company ? { id: String(company._id), name: company.name, slug: company.slug, status: company.status } : null,
-      };
-    }),
+    isOwner: context.isOwner,
+    memberships: (context.allMemberships || [])
+      .filter((m) => m.companyId)
+      .map((m) => ({
+        id: String(m._id),
+        roleId: m.roleId ? String(m.roleId) : null,
+        status: m.status,
+        role: m.role,
+        company: {
+          id: String((m.companyId as CompanyDocument)._id || m.companyId),
+          name: (m.companyId as CompanyDocument).name || "",
+          slug: (m.companyId as CompanyDocument).slug || "",
+          status: (m.companyId as CompanyDocument).status || "ACTIVE",
+        },
+      })),
     permissions: context.permissions,
   };
 };

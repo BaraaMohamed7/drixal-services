@@ -1,11 +1,13 @@
 import { CompanyMembership } from "../../models/company-membership.schema";
+import { Role } from "../../models/role.schema";
+import { allCompanyPermissions } from "../../utils/permissions";
 import { isDuplicateKeyError, normalizeCompanyRegistrationInput } from "../../utils/companies";
 import { requireUser } from "../../utils/auth";
 import { writeAuditLog } from "../../utils/audit";
 
 export default defineEventHandler(async (event) => {
   const session = await requireUser(event);
-  if (session.user.platformRole === "SUPER_ADMIN") {
+  if (session.isSuperAdmin) {
     throw createError({ statusCode: 403, statusMessage: "Platform administrators cannot create tenant companies" });
   }
   const input = normalizeCompanyRegistrationInput((await readBody(event)) || {});
@@ -15,14 +17,25 @@ export default defineEventHandler(async (event) => {
 
   let company;
   try {
-    company = await Company.create(input.company);
-    await CompanyMembership.create({ companyId: company._id, userId: session.user._id, role: "OWNER", status: "ACTIVE" });
-    session.authSession.activeWorkspaceType = "COMPANY";
-    session.authSession.activeCompanyId = company._id;
-    await session.authSession.save();
+    company = await Company.create({ ...input.company, ownerUserId: session.user._id });
+
+    const adminRole = await Role.create({
+      companyId: company._id,
+      name: "Admin",
+      normalizedName: "admin",
+      description: "Full company administrator",
+      permissions: allCompanyPermissions,
+      kind: "SYSTEM",
+      systemKey: "admin",
+      createdBy: session.user._id,
+      updatedBy: session.user._id,
+    });
+
+    await CompanyMembership.create({ companyId: company._id, userId: session.user._id, roleId: adminRole._id, role: "OWNER", status: "ACTIVE" });
   } catch (error) {
     if (company?._id) {
       await CompanyMembership.deleteOne({ companyId: company._id, userId: session.user._id });
+      await Role.deleteMany({ companyId: company._id });
       await Company.deleteOne({ _id: company._id });
     }
     if (isDuplicateKeyError(error)) throw createError({ statusCode: 409, statusMessage: "Company is already registered" });

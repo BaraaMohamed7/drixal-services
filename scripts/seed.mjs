@@ -141,6 +141,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
     passwordHash: { type: String, required: true },
     status: { type: String, enum: ["ACTIVE", "INACTIVE"], default: "ACTIVE" },
+    type: { type: String, enum: ["CUSTOMER", "COMPANY_USER", "SUPER_ADMIN"], default: "CUSTOMER" },
     platformRole: { type: String, enum: ["USER", "SUPER_ADMIN"], default: "USER" },
   },
   { collection: "users", timestamps: true },
@@ -160,12 +161,25 @@ const authSessionSchema = new mongoose.Schema(
   {
     tokenHash: { type: String, required: true, unique: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    activeWorkspaceType: { type: String, enum: ["PERSONAL", "COMPANY", "PLATFORM"], default: "PERSONAL" },
-    activeCompanyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     expiresAt: { type: Date, required: true },
     lastSeenAt: { type: Date, required: true },
   },
   { collection: "auth_sessions", timestamps: true },
+);
+
+const roleSchema = new mongoose.Schema(
+  {
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
+    name: { type: String, required: true, trim: true },
+    normalizedName: { type: String, required: true, lowercase: true, trim: true },
+    description: { type: String, default: "", trim: true },
+    permissions: { type: [String], default: [] },
+    kind: { type: String, enum: ["SYSTEM", "CUSTOM"], default: "CUSTOM" },
+    systemKey: { type: String, sparse: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  },
+  { collection: "roles", timestamps: true },
 );
 
 const Company = mongoose.model("Company", companySchema);
@@ -177,6 +191,7 @@ const ServiceOrder = mongoose.model("ServiceOrder", serviceOrderSchema);
 const User = mongoose.model("User", userSchema);
 const CompanyMembership = mongoose.model("CompanyMembership", membershipSchema);
 const AuthSession = mongoose.model("AuthSession", authSessionSchema);
+const Role = mongoose.model("Role", roleSchema);
 
 const companies = [
   {
@@ -377,59 +392,108 @@ try {
   }
 
   const demoCompany = companyDocs.get("cool-air-services");
+
+  const defaultRoleDefinitions = [
+    { name: "Admin", systemKey: "admin", permissions: ["members.read", "members.create", "members.update", "members.deactivate", "members.assign_role", "roles.read", "roles.create", "roles.update", "roles.delete", "roles.manage_permissions", "services.read", "services.create", "services.update", "services.delete", "services.publish", "requests.read", "requests.assign", "requests.update_status", "requests.convert", "customers.read", "customers.create", "customers.update", "orders.read", "orders.create", "orders.update", "orders.manage", "company_settings.read", "company_settings.update", "domains.read", "domains.create", "domains.update", "domains.delete"] },
+    { name: "Manager", systemKey: "manager", permissions: ["members.read", "services.read", "services.create", "services.update", "services.publish", "requests.read", "requests.assign", "requests.update_status", "requests.convert", "customers.read", "customers.create", "customers.update", "orders.read", "orders.create", "orders.update", "orders.manage", "company_settings.read"] },
+    { name: "Technician", systemKey: "technician", permissions: ["members.read", "services.read", "orders.read", "orders.update"] },
+    { name: "Viewer", systemKey: "viewer", permissions: ["members.read", "services.read", "requests.read", "customers.read", "orders.read"] },
+  ];
+
+  const companyRoleDocs = new Map();
+
+  for (const company of companyDocs.values()) {
+    for (const def of defaultRoleDefinitions) {
+      const roleDoc = await Role.findOneAndUpdate(
+        { companyId: company._id, systemKey: def.systemKey },
+        {
+          companyId: company._id,
+          name: def.name,
+          normalizedName: def.name.toLowerCase(),
+          description: `${def.name} role`,
+          permissions: def.permissions,
+          kind: "SYSTEM",
+          systemKey: def.systemKey,
+          createdBy: demoOwner._id,
+          updatedBy: demoOwner._id,
+        },
+        { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+      );
+      companyRoleDocs.set(`${String(company._id)}:${def.systemKey}`, roleDoc);
+    }
+  }
+
+  const demoOwnerRole = companyRoleDocs.get(`${String(demoCompany._id)}:admin`);
+  const demoOwner = await User.findOneAndUpdate(
+    { email: "owner@coolair.example" },
+    { name: "Demo Owner", email: "owner@coolair.example", passwordHash: demoPasswordHash, status: "ACTIVE", type: "COMPANY_USER", platformRole: "USER" },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
+  await CompanyMembership.findOneAndUpdate(
+    { companyId: demoCompany._id, userId: demoOwner._id },
+    { companyId: demoCompany._id, userId: demoOwner._id, roleId: demoOwnerRole._id, role: "OWNER", status: "ACTIVE" },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
+  await Company.findByIdAndUpdate(demoCompany._id, { ownerUserId: demoOwner._id });
+
   const demoUsers = [
-    { name: "Demo Manager", email: "manager@coolair.example", role: "MANAGER", platformRole: "USER" },
-    { name: "Demo Technician", email: "technician@coolair.example", role: "TECHNICIAN", platformRole: "USER" },
-    { name: "Demo Viewer", email: "viewer@coolair.example", role: "VIEWER", platformRole: "USER" },
+    { name: "Demo Manager", email: "manager@coolair.example", role: "MANAGER", systemKey: "manager", type: "COMPANY_USER", platformRole: "USER" },
+    { name: "Demo Technician", email: "technician@coolair.example", role: "TECHNICIAN", systemKey: "technician", type: "COMPANY_USER", platformRole: "USER" },
+    { name: "Demo Viewer", email: "viewer@coolair.example", role: "VIEWER", systemKey: "viewer", type: "COMPANY_USER", platformRole: "USER" },
   ];
   const demoUserDocs = new Map();
 
   for (const demoUserInput of demoUsers) {
     const demoUser = await User.findOneAndUpdate(
       { email: demoUserInput.email },
-      { name: demoUserInput.name, email: demoUserInput.email, passwordHash: demoPasswordHash, status: "ACTIVE", platformRole: demoUserInput.platformRole },
+      { name: demoUserInput.name, email: demoUserInput.email, passwordHash: demoPasswordHash, status: "ACTIVE", type: demoUserInput.type, platformRole: demoUserInput.platformRole },
       { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
     );
     demoUserDocs.set(demoUserInput.email, demoUser);
 
+    const roleDoc = companyRoleDocs.get(`${String(demoCompany._id)}:${demoUserInput.systemKey}`);
     await CompanyMembership.findOneAndUpdate(
       { companyId: demoCompany._id, userId: demoUser._id },
-      { companyId: demoCompany._id, userId: demoUser._id, role: demoUserInput.role, status: "ACTIVE" },
+      { companyId: demoCompany._id, userId: demoUser._id, roleId: roleDoc?._id, role: demoUserInput.role, status: "ACTIVE" },
       { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
     );
   }
 
   const secondDemoCompany = companyDocs.get("techfix");
   const demoManager = demoUserDocs.get("manager@coolair.example");
+  const techfixAdminRole = companyRoleDocs.get(`${String(secondDemoCompany._id)}:admin`);
   await CompanyMembership.findOneAndUpdate(
     { companyId: secondDemoCompany._id, userId: demoManager._id },
-    { companyId: secondDemoCompany._id, userId: demoManager._id, role: "OWNER", status: "ACTIVE" },
+    { companyId: secondDemoCompany._id, userId: demoManager._id, roleId: techfixAdminRole?._id, role: "OWNER", status: "ACTIVE" },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
+  await Company.findByIdAndUpdate(secondDemoCompany._id, { ownerUserId: demoManager._id });
 
   await User.findOneAndUpdate(
     { email: "admin@drixal.example" },
-    { name: "Drixal Super Admin", email: "admin@drixal.example", passwordHash: demoPasswordHash, status: "ACTIVE", platformRole: "SUPER_ADMIN" },
+    { name: "Drixal Super Admin", email: "admin@drixal.example", passwordHash: demoPasswordHash, status: "ACTIVE", type: "SUPER_ADMIN", platformRole: "SUPER_ADMIN" },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
 
   const pendingCompany = companyDocs.get("nile-home-care");
   const pendingOwner = await User.findOneAndUpdate(
     { email: "owner@nilehome.example" },
-    { name: "Nile Home Owner", email: "owner@nilehome.example", passwordHash: demoPasswordHash, status: "ACTIVE", platformRole: "USER" },
+    { name: "Nile Home Owner", email: "owner@nilehome.example", passwordHash: demoPasswordHash, status: "ACTIVE", type: "COMPANY_USER", platformRole: "USER" },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
+  const pendingAdminRole = companyRoleDocs.get(`${String(pendingCompany._id)}:admin`);
   await CompanyMembership.findOneAndUpdate(
     { companyId: pendingCompany._id, userId: pendingOwner._id },
-    { companyId: pendingCompany._id, userId: pendingOwner._id, role: "OWNER", status: "ACTIVE" },
+    { companyId: pendingCompany._id, userId: pendingOwner._id, roleId: pendingAdminRole?._id, role: "OWNER", status: "ACTIVE" },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
+  await Company.findByIdAndUpdate(pendingCompany._id, { ownerUserId: pendingOwner._id });
 
   const acMaintenance = await Service.findOne({ companyId: demoCompany._id, slug: "ac-maintenance" });
   const acInstallation = await Service.findOne({ companyId: demoCompany._id, slug: "ac-installation" });
   const customerUser = await User.findOneAndUpdate(
     { email: "customer@drixal.example" },
-    { name: "Demo Customer", email: "customer@drixal.example", passwordHash: demoPasswordHash, status: "ACTIVE", platformRole: "USER" },
+    { name: "Demo Customer", email: "customer@drixal.example", passwordHash: demoPasswordHash, status: "ACTIVE", type: "CUSTOMER", platformRole: "USER" },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
   const customers = [

@@ -4,7 +4,7 @@ type CompanyItem = {
   name: string;
   slug: string;
   description?: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+  status: "SETUP" | "ACTIVE" | "SUSPENDED";
   location: { city?: string; area?: string };
   createdAt: string;
 };
@@ -26,24 +26,22 @@ watch([search, status], () => {
 });
 const statusOptions = computed(() => [
   { label: t("common.allStatuses"), value: allOptionValue },
-  { label: t("statuses.PENDING"), value: "PENDING" },
-  { label: t("statuses.APPROVED"), value: "APPROVED" },
-  { label: t("statuses.REJECTED"), value: "REJECTED" },
+  { label: t("statuses.SETUP"), value: "SETUP" },
+  { label: t("statuses.ACTIVE"), value: "ACTIVE" },
   { label: t("statuses.SUSPENDED"), value: "SUSPENDED" },
 ]);
 
 const statusColor = (value: CompanyItem["status"]) => ({
-  PENDING: "warning",
-  APPROVED: "success",
-  REJECTED: "error",
+  SETUP: "warning",
+  ACTIVE: "success",
   SUSPENDED: "error",
 }[value]);
 
-const updateStatus = async (company: CompanyItem, nextStatus: "APPROVED" | "REJECTED" | "SUSPENDED") => {
-  if (nextStatus === "REJECTED" || nextStatus === "SUSPENDED") {
+const updateStatus = async (company: CompanyItem, nextStatus: "ACTIVE" | "SUSPENDED") => {
+  if (nextStatus === "SUSPENDED") {
     const confirmed = await confirm.open({
-      title: nextStatus === "REJECTED" ? t("confirm.rejectCompany") : t("confirm.suspendCompany"),
-      description: nextStatus === "REJECTED" ? t("confirm.rejectCompanyDescription") : t("confirm.suspendCompanyDescription"),
+      title: t("confirm.suspendCompany"),
+      description: t("confirm.suspendCompanyDescription"),
       cancelLabel: t("confirm.cancel"),
       confirmLabel: t("confirm.accept"),
     });
@@ -95,9 +93,8 @@ const updateStatus = async (company: CompanyItem, nextStatus: "APPROVED" | "REJE
             <td>{{ new Date(company.createdAt).toLocaleDateString() }}</td>
             <td>
               <div class="flex flex-wrap gap-2">
-                <UButton v-if="company.status !== 'APPROVED'" :label="t('common.approve')" size="sm" :loading="actionPending === `${company._id}:APPROVED`" @click="updateStatus(company, 'APPROVED')" />
-                <UButton v-if="company.status === 'PENDING'" :label="t('common.reject')" size="sm" color="error" variant="soft" :loading="actionPending === `${company._id}:REJECTED`" @click="updateStatus(company, 'REJECTED')" />
-                <UButton v-if="company.status === 'APPROVED'" :label="t('companyAdmin.suspend')" size="sm" color="error" variant="soft" :loading="actionPending === `${company._id}:SUSPENDED`" @click="updateStatus(company, 'SUSPENDED')" />
+                <UButton v-if="company.status !== 'ACTIVE'" :label="t('common.approve')" size="sm" :loading="actionPending === `${company._id}:ACTIVE`" @click="updateStatus(company, 'ACTIVE')" />
+                <UButton v-if="company.status === 'ACTIVE'" :label="t('companyAdmin.suspend')" size="sm" color="error" variant="soft" :loading="actionPending === `${company._id}:SUSPENDED`" @click="updateStatus(company, 'SUSPENDED')" />
               </div>
             </td>
           </tr>

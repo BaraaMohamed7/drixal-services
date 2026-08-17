@@ -3,7 +3,7 @@ import { assertCategoryActive, duplicateKeyError, getProviderCompany, normalizeU
 
 export default defineEventHandler(async (event) => {
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
-  const company = await getProviderCompany(event, "services.manage");
+  const company = await getProviderCompany(event, "services.update");
   const body = await readBody(event);
   const update = normalizeUpdateServiceInput(body || {});
   if (update.categoryId !== undefined) await assertCategoryActive(update.categoryId);

@@ -15,11 +15,11 @@ export const requirePermission = async (event: H3Event, permission: Permission) 
 export const getCurrentCompany = async (event: H3Event, permission: Permission) => {
   const session = await requirePermission(event, permission);
   if (!session.company) throw createError({ statusCode: 403, statusMessage: "Active company membership required" });
-  const restrictedMutation = ["requests.decide", "requests.convert", "customers.manage", "orders.manage"].includes(permission);
-  if (restrictedMutation && session.company.status !== "APPROVED") {
-    throw createError({ statusCode: 403, statusMessage: "Company must be approved for operational changes" });
+  const restrictedMutation = ["requests.update_status", "requests.convert", "customers.create", "customers.update", "orders.manage", "services.create", "services.update"].includes(permission);
+  if (restrictedMutation && session.company.status !== "ACTIVE") {
+    throw createError({ statusCode: 403, statusMessage: "Company must be active for operational changes" });
   }
-  if (permission === "services.manage" && ["REJECTED", "SUSPENDED"].includes(session.company.status)) {
+  if (["services.create", "services.update"].includes(permission) && ["SUSPENDED"].includes(session.company.status)) {
     throw createError({ statusCode: 403, statusMessage: "Company cannot modify services in its current status" });
   }
   return session.company;

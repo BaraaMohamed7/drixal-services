@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   let user;
   try {
-    user = await User.create({ name, email, passwordHash: await hashPassword(password), status: "ACTIVE", platformRole: "USER" });
+    user = await User.create({ name, email, passwordHash: await hashPassword(password), status: "ACTIVE", type: "CUSTOMER", platformRole: "USER" });
     await createAuthSession(event, user._id);
     setResponseStatus(event, 201);
     setResponseHeader(event, "cache-control", "no-store");

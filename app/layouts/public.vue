@@ -17,7 +17,7 @@ const navClass = (path: string) => route.path === path
         </NuxtLink>
         <nav class="hidden h-full items-center md:flex" :aria-label="t('common.marketplace')">
           <NuxtLink to="/marketplace" class="my-2 flex h-10 items-center rounded-md px-4 text-sm font-semibold" :class="navClass('/marketplace')">{{ t("common.marketplace") }}</NuxtLink>
-          <NuxtLink v-if="auth.session.value.user?.platformRole !== 'SUPER_ADMIN'" :to="auth.session.value.authenticated ? '/register/company' : { path: '/auth/register', query: { next: '/register/company' } }" class="my-2 flex h-10 items-center rounded-md px-4 text-sm font-semibold" :class="navClass('/register/company')">{{ t("marketplace.registerCompany") }}</NuxtLink>
+          <NuxtLink v-if="auth.session.value.user?.type !== 'SUPER_ADMIN'" :to="auth.session.value.authenticated ? '/register/company' : { path: '/auth/register', query: { next: '/register/company' } }" class="my-2 flex h-10 items-center rounded-md px-4 text-sm font-semibold" :class="navClass('/register/company')">{{ t("marketplace.registerCompany") }}</NuxtLink>
         </nav>
         <div class="flex items-center gap-2">
           <AppPreferences class="hidden sm:flex" />

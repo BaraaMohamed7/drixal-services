@@ -130,8 +130,8 @@ export const normalizeUpdateServiceInput = (body: ServiceInput) => {
 export const publishProviderService = async (event: H3Event, id: string) => {
   const company = await getProviderCompany(event, "services.publish");
 
-  if (company.status !== "APPROVED") {
-    throw createError({ statusCode: 400, statusMessage: "Company must be APPROVED before publishing services" });
+  if (company.status !== "ACTIVE") {
+    throw createError({ statusCode: 400, statusMessage: "Company must be ACTIVE before publishing services" });
   }
 
   const service = await Service.findOne({ _id: id, companyId: company._id });

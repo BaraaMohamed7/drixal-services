@@ -1,7 +1,9 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
 
 export const userStatusValues = ["ACTIVE", "INACTIVE"] as const;
+export const userTypeValues = ["CUSTOMER", "COMPANY_USER", "SUPER_ADMIN"] as const;
 export const userPlatformRoleValues = ["USER", "SUPER_ADMIN"] as const;
+export type UserType = (typeof userTypeValues)[number];
 export type UserPlatformRole = (typeof userPlatformRoleValues)[number];
 export type UserStatus = (typeof userStatusValues)[number];
 
@@ -11,6 +13,7 @@ export interface UserDocument {
   email: string;
   passwordHash: string;
   status: UserStatus;
+  type: UserType;
   platformRole: UserPlatformRole;
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +43,11 @@ export const User = defineMongooseModel<UserDocument>({
       type: String,
       enum: userStatusValues,
       default: "ACTIVE",
+    },
+    type: {
+      type: String,
+      enum: userTypeValues,
+      default: "CUSTOMER",
     },
     platformRole: {
       type: String,

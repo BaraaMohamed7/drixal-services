@@ -2,8 +2,10 @@ import { assertCompanyStatusTransition, normalizeCompanyReviewStatus } from "../
 import { writeAuditLog } from "../../../utils/audit";
 import { getObjectIdOrThrow } from "../../../utils/mongodb";
 import { requirePermission } from "../../../utils/session";
+import { requirePlatformTenant } from "../../../utils/tenant-guard";
 
 export default defineEventHandler(async (event) => {
+  requirePlatformTenant(event);
   await requirePermission(event, "companies.review");
   const id = getObjectIdOrThrow(getRouterParam(event, "id"));
   const body = await readBody<{ status?: unknown }>(event);
@@ -17,7 +19,7 @@ export default defineEventHandler(async (event) => {
   await writeAuditLog(event, {
     targetType: "COMPANY",
     targetId: company?._id || id,
-    action: status === "APPROVED" ? "APPROVE" : status === "REJECTED" ? "REJECT" : "SUSPEND",
+    action: status === "ACTIVE" ? "APPROVE" : "SUSPEND",
     summary: `Company "${company?.name || id}" changed from ${current.status} to ${status}`,
     metadata: { from: current.status, to: status },
   });

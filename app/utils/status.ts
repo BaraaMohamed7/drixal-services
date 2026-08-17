@@ -14,6 +14,7 @@ export const statusColor = (status: string): StatusColor => ({
   DRAFT: "warning",
   ON_HOLD: "warning",
   PENDING: "warning",
+  SETUP: "warning",
   UNDER_REVIEW: "warning",
   CANCELLED: "neutral",
   CLOSED: "neutral",

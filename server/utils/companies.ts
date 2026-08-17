@@ -48,15 +48,15 @@ export const normalizeCompanyRegistrationInput = (body: RegistrationInput) => {
         city: requiredText(body.company?.city, "company.city", 120),
         area: optionalText(body.company?.area, "company.area", 120),
       },
-      status: "PENDING" as CompanyStatus,
+      status: "SETUP" as CompanyStatus,
     },
   };
 };
 
 export const normalizeCompanyReviewStatus = (value: unknown): CompanyStatus => {
-  const reviewableStatuses: CompanyStatus[] = ["APPROVED", "REJECTED", "SUSPENDED"];
+  const reviewableStatuses: CompanyStatus[] = ["ACTIVE", "SUSPENDED"];
   if (typeof value !== "string" || !companyStatusValues.includes(value as CompanyStatus) || !reviewableStatuses.includes(value as CompanyStatus)) {
-    throw createError({ statusCode: 400, statusMessage: "status must be APPROVED, REJECTED, or SUSPENDED" });
+    throw createError({ statusCode: 400, statusMessage: "status must be ACTIVE or SUSPENDED" });
   }
 
   return value as CompanyStatus;

@@ -1,15 +1,10 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
 import mongoose from "mongoose";
 
-export const authSessionWorkspaceTypeValues = ["PERSONAL", "COMPANY", "PLATFORM"] as const;
-export type AuthSessionWorkspaceType = (typeof authSessionWorkspaceTypeValues)[number];
-
 export interface AuthSessionDocument {
   _id: mongoose.Types.ObjectId;
   tokenHash: string;
   userId: mongoose.Types.ObjectId;
-  activeWorkspaceType: AuthSessionWorkspaceType;
-  activeCompanyId?: mongoose.Types.ObjectId;
   expiresAt: Date;
   lastSeenAt: Date;
   createdAt: Date;
@@ -29,15 +24,6 @@ export const AuthSession = defineMongooseModel<AuthSessionDocument>({
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    },
-    activeWorkspaceType: {
-      type: String,
-      enum: authSessionWorkspaceTypeValues,
-      default: "PERSONAL",
-    },
-    activeCompanyId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
     },
     expiresAt: {
       type: Date,

@@ -71,13 +71,9 @@ describe("service order lifecycle", () => {
 describe("company lifecycle", () => {
   it("allows valid review transitions", () => {
     const valid: Array<[CompanyStatus, CompanyStatus]> = [
-      ["PENDING", "APPROVED"],
-      ["PENDING", "REJECTED"],
-      ["APPROVED", "SUSPENDED"],
-      ["APPROVED", "REJECTED"],
-      ["REJECTED", "APPROVED"],
-      ["SUSPENDED", "APPROVED"],
-      ["SUSPENDED", "REJECTED"],
+      ["SETUP", "ACTIVE"],
+      ["ACTIVE", "SUSPENDED"],
+      ["SUSPENDED", "ACTIVE"],
     ];
     for (const [current, next] of valid) {
       expect(() => assertCompanyStatusTransition(current, next)).not.toThrow();
@@ -92,9 +88,9 @@ describe("company lifecycle", () => {
 
   it("rejects invalid transitions", () => {
     const invalid: Array<[CompanyStatus, CompanyStatus]> = [
-      ["APPROVED", "PENDING"],
-      ["PENDING", "SUSPENDED"],
-      ["REJECTED", "SUSPENDED"],
+      ["SETUP", "SUSPENDED"],
+      ["SUSPENDED", "SETUP"],
+      ["ACTIVE", "SETUP"],
     ];
     for (const [current, next] of invalid) {
       expect(() => assertCompanyStatusTransition(current, next)).toThrow();

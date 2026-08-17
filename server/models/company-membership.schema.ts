@@ -10,6 +10,8 @@ export interface CompanyMembershipDocument {
   _id: mongoose.Types.ObjectId;
   companyId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
+  roleId?: mongoose.Types.ObjectId;
+  /** @deprecated Use roleId instead. Will be removed after migration. */
   role: CompanyMembershipRole;
   status: CompanyMembershipStatus;
   createdAt: Date;
@@ -29,6 +31,11 @@ export const CompanyMembership = defineMongooseModel<CompanyMembershipDocument>(
       ref: "User",
       required: true,
     },
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
+    },
+    /** @deprecated Use roleId instead. Will be removed after migration. */
     role: {
       type: String,
       enum: companyMembershipRoleValues,
@@ -47,5 +54,6 @@ export const CompanyMembership = defineMongooseModel<CompanyMembershipDocument>(
   hooks(schema) {
     schema.index({ companyId: 1, userId: 1 }, { unique: true });
     schema.index({ userId: 1, status: 1 });
+    schema.index({ userId: 1 }, { unique: true, partialFilterExpression: { status: "ACTIVE" } });
   },
 });

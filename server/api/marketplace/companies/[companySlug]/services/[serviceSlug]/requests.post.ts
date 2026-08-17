@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const session = await requireUser(event);
   const companySlug = getRouterParam(event, "companySlug");
   const serviceSlug = getRouterParam(event, "serviceSlug");
-  const company = await Company.findOne({ slug: companySlug, status: "APPROVED" }).select("_id");
+  const company = await Company.findOne({ slug: companySlug, status: "ACTIVE" }).select("_id");
 
   if (!company) throw createError({ statusCode: 404, statusMessage: "Service not found" });
 

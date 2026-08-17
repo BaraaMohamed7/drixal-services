@@ -31,10 +31,9 @@ export const assertOrderStatusTransition = (current: ServiceOrderStatus, next: S
 };
 
 export const companyStatusTransitions: Record<CompanyStatus, CompanyStatus[]> = {
-  PENDING: ["APPROVED", "REJECTED"],
-  APPROVED: ["SUSPENDED", "REJECTED"],
-  REJECTED: ["APPROVED"],
-  SUSPENDED: ["APPROVED", "REJECTED"],
+  SETUP: ["ACTIVE"],
+  ACTIVE: ["SUSPENDED"],
+  SUSPENDED: ["ACTIVE"],
 };
 
 export const assertCompanyStatusTransition = (current: CompanyStatus, next: CompanyStatus) => {

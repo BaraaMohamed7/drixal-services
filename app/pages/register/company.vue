@@ -5,7 +5,7 @@ const { t } = useLocale();
 const auth = useAuth();
 const pending = ref(false);
 const error = ref("");
-const result = ref<{ company: { name: string; slug: string; status: "PENDING" } }>();
+const result = ref<{ company: { name: string; slug: string; status: "SETUP" } }>();
 const form = reactive({
   company: {
     name: "",
@@ -30,7 +30,6 @@ const register = async () => {
 };
 
 const returnToPersonal = async () => {
-  await auth.switchWorkspace({ type: "PERSONAL" });
   await navigateTo("/customer");
 };
 </script>
@@ -50,7 +49,7 @@ const returnToPersonal = async () => {
       <div class="flex size-10 items-center justify-center rounded-lg bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]">
         <UIcon name="i-lucide-clock-3" class="size-5" />
       </div>
-      <UBadge class="mt-5" :label="t('statuses.PENDING')" color="warning" variant="soft" />
+      <UBadge class="mt-5" :label="t('statuses.SETUP')" color="warning" variant="soft" />
       <h2 class="mt-3 text-xl font-semibold">{{ t("companyRegistration.successTitle") }}</h2>
       <p class="drixal-muted mt-2 max-w-2xl">{{ t("companyRegistration.successDescription", { company: result.company.name }) }}</p>
       <div class="mt-6 flex flex-wrap gap-2">

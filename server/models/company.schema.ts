@@ -1,6 +1,7 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
+import mongoose from "mongoose";
 
-export const companyStatusValues = ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"] as const;
+export const companyStatusValues = ["SETUP", "ACTIVE", "SUSPENDED"] as const;
 export type CompanyStatus = (typeof companyStatusValues)[number];
 
 export interface CompanyDocument {
@@ -14,6 +15,7 @@ export interface CompanyDocument {
     area: string;
   };
   rating: number;
+  ownerUserId?: import("mongoose").Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,7 +43,7 @@ export const Company = defineMongooseModel<CompanyDocument>({
     status: {
       type: String,
       enum: companyStatusValues,
-      default: "PENDING",
+      default: "SETUP",
     },
     location: {
       city: {
@@ -61,6 +63,10 @@ export const Company = defineMongooseModel<CompanyDocument>({
       min: 0,
       max: 5,
     },
+    ownerUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   options: {
     collection: "companies",
@@ -68,5 +74,6 @@ export const Company = defineMongooseModel<CompanyDocument>({
   },
   hooks(schema) {
     schema.index({ status: 1 });
+    schema.index({ ownerUserId: 1 });
   },
 });

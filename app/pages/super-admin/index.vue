@@ -1,19 +1,19 @@
 <script setup lang="ts">
 definePageMeta({ layout: "workspace" });
-type CompanyItem = { _id: string; status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"; createdAt: string; name: string; slug: string; location?: { city?: string } };
+type CompanyItem = { _id: string; status: "SETUP" | "ACTIVE" | "SUSPENDED"; createdAt: string; name: string; slug: string; location?: { city?: string } };
 const { locale, t } = useLocale();
 const { data, pending } = await useFetch<{ items: CompanyItem[] }>("/api/admin/companies");
 const companies = computed(() => data.value?.items || []);
-const counts = computed(() => ({ total: companies.value.length, pending: companies.value.filter((item) => item.status === "PENDING").length, approved: companies.value.filter((item) => item.status === "APPROVED").length, suspended: companies.value.filter((item) => item.status === "SUSPENDED").length }));
+const counts = computed(() => ({ total: companies.value.length, setup: companies.value.filter((item) => item.status === "SETUP").length, active: companies.value.filter((item) => item.status === "ACTIVE").length, suspended: companies.value.filter((item) => item.status === "SUSPENDED").length }));
 const metrics = computed(() => [
   { label: t("dashboards.totalCompanies"), value: counts.value.total },
-  { label: t("statuses.PENDING"), value: counts.value.pending },
-  { label: t("statuses.APPROVED"), value: counts.value.approved },
+  { label: t("statuses.SETUP"), value: counts.value.setup },
+  { label: t("statuses.ACTIVE"), value: counts.value.active },
   { label: t("statuses.SUSPENDED"), value: counts.value.suspended },
 ]);
-const distribution = computed(() => ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"].map((status) => ({ status, label: t(`statuses.${status}`), value: companies.value.filter((item) => item.status === status).length })));
+const distribution = computed(() => ["SETUP", "ACTIVE", "SUSPENDED"].map((status) => ({ status, label: t(`statuses.${status}`), value: companies.value.filter((item) => item.status === status).length })));
 const distributionMax = computed(() => Math.max(1, ...distribution.value.map((item) => item.value)));
-const reviewQueue = computed(() => companies.value.filter((item) => item.status === "PENDING").slice(0, 6));
+const reviewQueue = computed(() => companies.value.filter((item) => item.status === "SETUP").slice(0, 6));
 const formatDate = (value: string) => new Intl.DateTimeFormat(locale.value === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
 </script>
 

@@ -2,7 +2,7 @@ import { mapMarketplaceService } from "../../../../utils/marketplace";
 
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, "companySlug");
-  const company = await Company.findOne({ slug, status: "APPROVED" });
+  const company = await Company.findOne({ slug, status: "ACTIVE" });
   if (!company) throw createError({ statusCode: 404, statusMessage: "Company not found" });
 
   const services = await Service.find({

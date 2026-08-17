@@ -1,11 +1,8 @@
-const companyAdminRoles = ["OWNER", "ADMIN", "MANAGER"];
-const employeeRoles = ["TECHNICIAN", "VIEWER"];
-
-const legacyDestination = (path: string, companyAdmin: boolean) => {
+const legacyDestination = (path: string, session: ReturnType<typeof useAuth>["session"]["value"]) => {
   if (path === "/admin/companies") return "/super-admin/companies";
   if (!path.startsWith("/provider")) return undefined;
 
-  if (companyAdmin) return path.replace(/^\/provider/, "/company-admin");
+  if (session.isOwner || session.permissions.includes("services.create")) return path.replace(/^\/provider/, "/company-admin");
   if (path.startsWith("/provider/orders")) return path.replace(/^\/provider/, "/employee");
   if (path.startsWith("/provider/schedule")) return path.replace(/^\/provider/, "/employee");
   return "/employee";
@@ -24,15 +21,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (isProtected && !session.authenticated) return navigateTo({ path: "/auth/login", query: { next: to.fullPath } });
   if (!session.authenticated) return;
 
-  const role = session.membership?.role || "";
-  const isCompanyAdmin = companyAdminRoles.includes(role);
-  const isEmployee = employeeRoles.includes(role);
-  const legacy = legacyDestination(to.path, isCompanyAdmin);
+  const legacy = legacyDestination(to.path, session);
   if (legacy) return navigateTo({ path: legacy, query: to.query }, { redirectCode: 302 });
 
-  if (to.path.startsWith("/super-admin") && (session.user?.platformRole !== "SUPER_ADMIN" || session.activeWorkspace?.type !== "PLATFORM")) return navigateTo(auth.workspaceHome.value);
-  if (to.path.startsWith("/company-admin") && !isCompanyAdmin) return navigateTo(auth.workspaceHome.value);
-  if (to.path.startsWith("/employee") && !isEmployee) return navigateTo(auth.workspaceHome.value);
-  if (to.path.startsWith("/customer") && session.activeWorkspace?.type !== "PERSONAL") return navigateTo(auth.workspaceHome.value);
-  if (to.path === "/register/company" && session.user?.platformRole === "SUPER_ADMIN") return navigateTo(auth.workspaceHome.value);
+  if (to.path.startsWith("/super-admin") && (session.user?.type !== "SUPER_ADMIN" || session.tenant?.kind !== "PLATFORM")) return navigateTo(auth.workspaceHome.value);
+  if (to.path.startsWith("/company-admin") && !(session.isOwner || session.permissions.includes("services.create"))) return navigateTo(auth.workspaceHome.value);
+  if (to.path.startsWith("/employee") && (session.isOwner || session.permissions.includes("services.create"))) return navigateTo(auth.workspaceHome.value);
+  if (to.path.startsWith("/customer") && session.tenant?.kind !== "PLATFORM") return navigateTo(auth.workspaceHome.value);
+  if (to.path === "/register/company" && session.user?.type === "SUPER_ADMIN") return navigateTo(auth.workspaceHome.value);
 });

@@ -3,7 +3,7 @@ type CompanyDetail = {
   name: string;
   slug: string;
   description?: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+  status: "SETUP" | "ACTIVE" | "SUSPENDED";
   location: { city?: string; area?: string };
   createdAt: string;
 };
@@ -11,11 +11,10 @@ type CompanyDetail = {
 const { t } = useLocale();
 const { data: company, pending, error } = await useFetch<CompanyDetail>("/api/companies/current");
 const statusColor = computed(() => ({
-  PENDING: "warning",
-  APPROVED: "success",
-  REJECTED: "error",
+  SETUP: "warning",
+  ACTIVE: "success",
   SUSPENDED: "error",
-}[company.value?.status || "PENDING"]));
+}[company.value?.status || "SETUP"]));
 </script>
 
 <template>
@@ -48,7 +47,7 @@ const statusColor = computed(() => ({
       <aside class="drixal-panel h-fit rounded-xl p-5">
         <h2 class="text-lg font-semibold">{{ t("companyProfile.approvalTitle") }}</h2>
         <p class="drixal-muted mt-2 text-sm leading-6">{{ t(`companyProfile.statusDescription.${company.status}`) }}</p>
-        <p v-if="company.status !== 'APPROVED'" class="mt-4 text-sm font-semibold text-[var(--drixal-ink)]">{{ t("companyProfile.publicationBlocked") }}</p>
+        <p v-if="company.status !== 'ACTIVE'" class="mt-4 text-sm font-semibold text-[var(--drixal-ink)]">{{ t("companyProfile.publicationBlocked") }}</p>
       </aside>
     </div>
   </section>
