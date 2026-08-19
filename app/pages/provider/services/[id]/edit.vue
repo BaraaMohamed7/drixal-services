@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ServiceForm from "~/components/ServiceForm.vue";
+definePageMeta({ layout: "workspace" });
 
 type Category = {
   _id: string;
@@ -52,7 +53,7 @@ const initialValue = computed(() => {
 });
 
 const updateService = async (value: unknown) => {
-  if (!hasPermission("services.manage")) return;
+  if (!hasPermission("services.update")) return;
   pending.value = true;
   error.value = "";
 

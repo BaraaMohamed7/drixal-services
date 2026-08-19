@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: "workspace" });
 type CustomerItem = {
   _id: string;
   name: string;

@@ -30,12 +30,13 @@ const companySchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     description: { type: String, default: "", trim: true },
-    status: { type: String, enum: ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"], default: "PENDING" },
+    status: { type: String, enum: ["SETUP", "ACTIVE", "SUSPENDED"], default: "SETUP" },
     location: {
       city: { type: String, default: "", trim: true },
       area: { type: String, default: "", trim: true },
     },
     rating: { type: Number, default: 0, min: 0, max: 5 },
+    ownerUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { collection: "companies", timestamps: true },
 );
@@ -151,6 +152,7 @@ const membershipSchema = new mongoose.Schema(
   {
     companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    roleId: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
     role: { type: String, enum: ["OWNER", "ADMIN", "MANAGER", "TECHNICIAN", "VIEWER"], default: "MANAGER" },
     status: { type: String, enum: ["ACTIVE", "INACTIVE"], default: "ACTIVE" },
   },
@@ -182,6 +184,20 @@ const roleSchema = new mongoose.Schema(
   { collection: "roles", timestamps: true },
 );
 
+const companyDomainSchema = new mongoose.Schema(
+  {
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
+    hostname: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    normalizedHostname: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    type: { type: String, enum: ["SUBDOMAIN", "CUSTOM"], required: true },
+    status: { type: String, enum: ["PENDING", "VERIFYING", "VERIFIED", "FAILED", "DISABLED"], default: "PENDING" },
+    isPrimary: { type: Boolean, default: false },
+    verificationToken: { type: String },
+    verifiedAt: { type: Date },
+  },
+  { collection: "company_domains", timestamps: true },
+);
+
 const Company = mongoose.model("Company", companySchema);
 const ServiceCategory = mongoose.model("ServiceCategory", categorySchema);
 const Service = mongoose.model("Service", serviceSchema);
@@ -192,13 +208,14 @@ const User = mongoose.model("User", userSchema);
 const CompanyMembership = mongoose.model("CompanyMembership", membershipSchema);
 const AuthSession = mongoose.model("AuthSession", authSessionSchema);
 const Role = mongoose.model("Role", roleSchema);
+const CompanyDomain = mongoose.model("CompanyDomain", companyDomainSchema);
 
 const companies = [
   {
     name: "Cool Air Services",
     slug: "cool-air-services",
     description: "Residential and commercial AC services in Alexandria.",
-    status: "APPROVED",
+    status: "ACTIVE",
     location: { city: "Alexandria", area: "Sidi Gaber" },
     rating: 4.7,
   },
@@ -206,7 +223,7 @@ const companies = [
     name: "TechFix",
     slug: "techfix",
     description: "Laptop maintenance and remote IT support.",
-    status: "APPROVED",
+    status: "ACTIVE",
     location: { city: "Alexandria", area: "Smouha" },
     rating: 4.5,
   },
@@ -214,7 +231,7 @@ const companies = [
     name: "Nile Home Care",
     slug: "nile-home-care",
     description: "New home services provider awaiting platform review.",
-    status: "PENDING",
+    status: "SETUP",
     location: { city: "Cairo", area: "Nasr City" },
     rating: 0,
   },
@@ -277,6 +294,9 @@ try {
     CompanyMembership.collection.createIndex({ userId: 1, status: 1 }),
     AuthSession.collection.createIndex({ tokenHash: 1 }, { unique: true }),
     AuthSession.collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    CompanyDomain.collection.createIndex({ companyId: 1 }),
+    CompanyDomain.collection.createIndex({ normalizedHostname: 1 }, { unique: true }),
+    CompanyDomain.collection.createIndex({ companyId: 1, isPrimary: 1 }),
   ]);
 
   const companyDocs = new Map();
@@ -393,6 +413,12 @@ try {
 
   const demoCompany = companyDocs.get("cool-air-services");
 
+  const demoOwner = await User.findOneAndUpdate(
+    { email: "owner@coolair.example" },
+    { name: "Demo Owner", email: "owner@coolair.example", passwordHash: demoPasswordHash, status: "ACTIVE", type: "COMPANY_USER", platformRole: "USER" },
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+  );
+
   const defaultRoleDefinitions = [
     { name: "Admin", systemKey: "admin", permissions: ["members.read", "members.create", "members.update", "members.deactivate", "members.assign_role", "roles.read", "roles.create", "roles.update", "roles.delete", "roles.manage_permissions", "services.read", "services.create", "services.update", "services.delete", "services.publish", "requests.read", "requests.assign", "requests.update_status", "requests.convert", "customers.read", "customers.create", "customers.update", "orders.read", "orders.create", "orders.update", "orders.manage", "company_settings.read", "company_settings.update", "domains.read", "domains.create", "domains.update", "domains.delete"] },
     { name: "Manager", systemKey: "manager", permissions: ["members.read", "services.read", "services.create", "services.update", "services.publish", "requests.read", "requests.assign", "requests.update_status", "requests.convert", "customers.read", "customers.create", "customers.update", "orders.read", "orders.create", "orders.update", "orders.manage", "company_settings.read"] },
@@ -424,11 +450,6 @@ try {
   }
 
   const demoOwnerRole = companyRoleDocs.get(`${String(demoCompany._id)}:admin`);
-  const demoOwner = await User.findOneAndUpdate(
-    { email: "owner@coolair.example" },
-    { name: "Demo Owner", email: "owner@coolair.example", passwordHash: demoPasswordHash, status: "ACTIVE", type: "COMPANY_USER", platformRole: "USER" },
-    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
-  );
   await CompanyMembership.findOneAndUpdate(
     { companyId: demoCompany._id, userId: demoOwner._id },
     { companyId: demoCompany._id, userId: demoOwner._id, roleId: demoOwnerRole._id, role: "OWNER", status: "ACTIVE" },
@@ -572,7 +593,26 @@ try {
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
   );
 
-  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, ${services.length} services, ${customers.length} customers, 2 service orders, and ${demoUsers.length + 3} demo users.`);
+  const domainDocs = [];
+  for (const company of companyDocs.values()) {
+    const hostname = `${company.slug}.drixal.com`;
+    const doc = await CompanyDomain.findOneAndUpdate(
+      { companyId: company._id, type: "SUBDOMAIN" },
+      {
+        companyId: company._id,
+        hostname,
+        normalizedHostname: hostname,
+        type: "SUBDOMAIN",
+        status: company.status === "ACTIVE" ? "VERIFIED" : "PENDING",
+        isPrimary: true,
+        verifiedAt: company.status === "ACTIVE" ? new Date() : undefined,
+      },
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+    );
+    domainDocs.push(doc);
+  }
+
+  console.log(`Seeded ${companies.length} companies, ${categories.length} categories, ${services.length} services, ${customers.length} customers, ${domainDocs.length} domains, 2 service orders, and ${demoUsers.length + 3} demo users.`);
 } finally {
   await mongoose.disconnect();
 }

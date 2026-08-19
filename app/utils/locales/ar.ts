@@ -121,8 +121,6 @@ export const ar: typeof en = {
     workspace: "مساحة العمل",
     currentWorkspace: "مساحة العمل الحالية",
     navigation: "التنقل",
-    switchWorkspace: "تبديل مساحة العمل",
-    workspaceSwitchError: "تعذر تبديل مساحة العمل",
   },
   roles: {
     OWNER: "المالك",

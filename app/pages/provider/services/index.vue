@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: "workspace" });
 type ServiceItem = {
   _id: string;
   name: string;
@@ -125,7 +126,7 @@ const unpublish = async (service: ServiceItem) => {
         <USelect v-model="publicationStatus" :items="statusOptions" label-key="label" value-key="value" class="min-w-0 md:w-56" />
       </div>
 
-      <UButton v-if="hasPermission('services.manage')" :to="`${serviceBase}/new`" :label="t('common.createService')" />
+      <UButton v-if="hasPermission('services.create')" :to="`${serviceBase}/new`" :label="t('common.createService')" />
     </div>
 
     <p v-if="error" class="drixal-danger rounded-xl p-4 font-semibold">{{ error.message }}</p>
@@ -156,10 +157,10 @@ const unpublish = async (service: ServiceItem) => {
             <td>{{ service.duration ? `${service.duration} min` : '-' }}</td>
             <td>
               <div class="flex flex-wrap gap-2">
-                 <UButton v-if="hasPermission('services.manage')" :to="`${serviceBase}/${service._id}/edit`" :label="t('common.edit')" size="sm" color="neutral" variant="outline" />
+                 <UButton v-if="hasPermission('services.update')" :to="`${serviceBase}/${service._id}/edit`" :label="t('common.edit')" size="sm" color="neutral" variant="outline" />
                  <UButton v-if="hasPermission('services.publish') && service.publicationStatus !== 'PUBLISHED'" :label="t('common.publish')" size="sm" @click="publish(service)" />
                  <UButton v-else-if="hasPermission('services.publish')" :label="t('common.unpublish')" size="sm" color="neutral" variant="soft" @click="unpublish(service)" />
-                 <span v-if="!hasPermission('services.manage') && !hasPermission('services.publish')" class="drixal-muted text-xs font-semibold">{{ t("permissions.readOnly") }}</span>
+                 <span v-if="!hasPermission('services.create') && !hasPermission('services.update') && !hasPermission('services.publish')" class="drixal-muted text-xs font-semibold">{{ t("permissions.readOnly") }}</span>
               </div>
             </td>
           </tr>
@@ -175,7 +176,7 @@ const unpublish = async (service: ServiceItem) => {
     <div v-else class="drixal-panel rounded-xl border-dashed p-6 text-center">
       <h2 class="text-xl font-black">{{ t("providerServices.emptyTitle") }}</h2>
       <p class="drixal-muted mt-2">{{ t("providerServices.emptyDescription") }}</p>
-       <UButton v-if="hasPermission('services.manage')" :to="`${serviceBase}/new`" class="mt-5" :label="t('common.createService')" />
+       <UButton v-if="hasPermission('services.create')" :to="`${serviceBase}/new`" class="mt-5" :label="t('common.createService')" />
     </div>
   </section>
 </template>

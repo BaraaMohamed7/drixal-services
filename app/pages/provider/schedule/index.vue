@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: "workspace" });
 type ScheduleOrder = {
   _id: string;
   orderNumber: string;

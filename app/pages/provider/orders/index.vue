@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: "workspace" });
 type ServiceOrderItem = {
   _id: string;
   orderNumber: string;

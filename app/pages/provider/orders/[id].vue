@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: "workspace" });
 type ServiceOrderLine = {
   _id?: string;
   title: string;

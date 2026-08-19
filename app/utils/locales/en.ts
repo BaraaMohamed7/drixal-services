@@ -119,8 +119,6 @@ export const en = {
     workspace: "Workspace",
     currentWorkspace: "Current workspace",
     navigation: "Navigation",
-    switchWorkspace: "Switch workspace",
-    workspaceSwitchError: "Unable to switch workspace",
   },
   roles: {
     OWNER: "Owner",
